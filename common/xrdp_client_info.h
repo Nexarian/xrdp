@@ -213,6 +213,7 @@ struct xrdp_client_info
      * data */
     unsigned int session_physical_width; /* in mm */
     unsigned int session_physical_height; /* in mm */
+    int gfx;
 };
 
 /* yyyymmdd of last incompatible change to xrdp_client_info */

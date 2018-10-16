@@ -190,6 +190,10 @@ xrdp_region_intersect_rect(struct xrdp_region *self, struct xrdp_rect *rect);
 int
 xrdp_region_get_rect(struct xrdp_region *self, int index,
                      struct xrdp_rect *rect);
+int
+xrdp_region_get_bounds(struct xrdp_region *self, struct xrdp_rect *rect);
+int
+xrdp_region_not_empty(struct xrdp_region *self);
 
 /* xrdp_bitmap_common.c */
 struct xrdp_bitmap *
@@ -445,6 +449,12 @@ int
 xrdp_mm_check_wait_objs(struct xrdp_mm *self);
 int
 xrdp_mm_frame_ack(struct xrdp_mm *self, int frame_id);
+int
+xrdp_mm_egfx_send_planar_bitmap(struct xrdp_mm *self,
+                                struct xrdp_bitmap *bitmap,
+                                struct xrdp_rect *rect);
+int
+xrdp_mm_can_resize(struct xrdp_mm *self);
 int
 server_begin_update(struct xrdp_mod *mod);
 int
