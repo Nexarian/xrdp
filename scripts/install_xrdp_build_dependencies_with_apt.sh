@@ -77,8 +77,9 @@ in
             libssl-dev \
             libx11-dev \
             libxrandr-dev \
-            libxfixes-dev"
-
+            libxfixes-dev \
+            libepoxy-dev \
+            libepoxy0"
         case "$FEATURE_SET"
         in
             min)
@@ -114,6 +115,7 @@ in
             $LIBFREETYPE_DEV:i386 \
             libgl1-mesa-dev:i386 \
             libglu1-mesa-dev:i386 \
+            libegl1-mesa-dev:i386 \
             libjpeg-dev:i386 \
             libimlib2-dev:i386 \
             libmp3lame-dev:i386 \
@@ -124,8 +126,11 @@ in
             libxext-dev:i386 \
             libxfixes-dev:i386 \
             libxrandr-dev:i386 \
-            libxrender-dev:i386"
-
+            libxrender-dev:i386 \
+            libxrender-dev:i386 \
+            libfuse-dev:i386 \
+            libepoxy-dev:i386 \
+            libepoxy0:i386"
         dpkg --add-architecture i386
         dpkg --print-architecture
         dpkg --print-foreign-architectures
