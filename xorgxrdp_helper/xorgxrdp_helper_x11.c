@@ -3,8 +3,11 @@
 #endif
 
 #if (!defined(XRDP_GLX)) && (!defined(XRDP_EGL))
+#if defined(XRDP_NVENC)
 #define XRDP_GLX
-//#define XRDP_EGL
+#elif defined(XRDP_YAMI)
+#define XRDP_EGL
+#endif
 #endif
 
 #include <stdlib.h>
@@ -255,94 +258,90 @@ xorgxrdp_helper_inf_release_tex_image(inf_image_t inf_image)
 
 #include <epoxy/egl.h>
 
-static EGLDisplay g_egl_display;
-static EGLContext g_egl_context;
+EGLDisplay g_egl_display;
+EGLContext g_egl_context;
 static EGLSurface g_egl_surface;
 static EGLConfig g_ecfg;
 static EGLint g_num_config;
 
 static EGLint g_choose_config_attr[] =
 {
-    EGL_COLOR_BUFFER_TYPE,     EGL_RGB_BUFFER,
-    EGL_BUFFER_SIZE,           32,
-    EGL_RED_SIZE,              8,
-    EGL_GREEN_SIZE,            8,
-    EGL_BLUE_SIZE,             8,
-    EGL_ALPHA_SIZE,            8,
-
-    EGL_DEPTH_SIZE,            24,
-    EGL_STENCIL_SIZE,          8,
-
-    EGL_SAMPLE_BUFFERS,        0,
-    EGL_SAMPLES,               0,
-
-    EGL_SURFACE_TYPE,          EGL_WINDOW_BIT | EGL_PIXMAP_BIT,
-    EGL_RENDERABLE_TYPE,       EGL_OPENGL_BIT,
-
-    //EGL_BIND_TO_TEXTURE_RGB,   EGL_TRUE,
-    //EGL_Y_INVERTED_NOK, EGL_TRUE,
-
-    EGL_NONE,
-
-    //EGL_RED_SIZE,        8,
-    //EGL_GREEN_SIZE,      8,
-    //EGL_BLUE_SIZE,       8,
-    //EGL_SURFACE_TYPE,    EGL_WINDOW_BIT,
-    //EGL_RENDERABLE_TYPE, 0,
-    //EGL_BIND_TO_TEXTURE_RGB, EGL_TRUE,
-    //EGL_NONE
-    //EGL_RED_SIZE,           8,
-    //EGL_GREEN_SIZE,         8,
-    //EGL_BLUE_SIZE,          8,
-    //EGL_ALPHA_SIZE,         0,
-    //EGL_RENDERABLE_TYPE,    EGL_OPENGL_ES2_BIT,
-    //EGL_CONFIG_CAVEAT,      EGL_NONE,
-    //EGL_MATCH_NATIVE_PIXMAP, 1,
-    //EGL_BIND_TO_TEXTURE_RGBA, EGL_TRUE,
-    //EGL_SURFACE_TYPE, EGL_WINDOW_BIT | EGL_PIXMAP_BIT,
-    //EGL_NONE
+    EGL_RED_SIZE, 8,
+    EGL_GREEN_SIZE, 8,
+    EGL_BLUE_SIZE, 8,
+    EGL_NONE
 };
+
 static EGLint g_create_context_attr[] =
 {
-    EGL_CONTEXT_CLIENT_VERSION, 2,
+    EGL_CONTEXT_MAJOR_VERSION, 3,
+    EGL_CONTEXT_MINOR_VERSION, 3,
     EGL_NONE
 };
 
 static const EGLint g_create_surface_attr[] =
-{
-    //EGL_Y_INVERTED_NOK, EGL_TRUE,
-    EGL_BIND_TO_TEXTURE_RGBA, EGL_TRUE,
-    //EGL_TEXTURE_TARGET, EGL_TEXTURE_2D,
-    //EGL_TEXTURE_FORMAT, EGL_TEXTURE_RGBA,
-    //EGL_MIPMAP_TEXTURE, EGL_TRUE,
-    //EGL_TEXTURE_TARGET
+ {
+    EGL_TEXTURE_TARGET, EGL_TEXTURE_2D,
+    EGL_TEXTURE_FORMAT, EGL_TEXTURE_RGBA,
     EGL_NONE
 };
 
 typedef EGLSurface inf_image_t;
 
 /*****************************************************************************/
+static EGLBoolean
+xorgxrdp_helper_check_ext(const char *ext_name)
+{
+    const char *ext_str;
+
+    if (!epoxy_has_egl_extension(g_egl_display, ext_name))
+    {
+        ext_str = eglQueryString(g_egl_display, EGL_EXTENSIONS);
+        LOG(LOG_LEVEL_ERROR, "%s not present all list", ext_name);
+        LOG(LOG_LEVEL_ERROR, "%s", ext_str);
+        return EGL_FALSE;
+    }
+    LOG(LOG_LEVEL_INFO, "%s present", ext_name);
+    return EGL_TRUE;
+}
+
 static int
 xorgxrdp_helper_inf_init(void)
 {
+    int egl_ver;
     int ok;
 
+    ok = eglBindAPI(EGL_OPENGL_API);
+    LOG(LOG_LEVEL_INFO, "eglBindAPI ok %d", ok);
     g_egl_display = eglGetDisplay((EGLNativeDisplayType) g_display);
+    LOG(LOG_LEVEL_INFO, "g_egl_display %p", g_egl_display);
     eglInitialize(g_egl_display, NULL, NULL);
+    egl_ver = epoxy_egl_version(g_egl_display);
+    LOG(LOG_LEVEL_INFO, "egl_ver %d", egl_ver);
+    if (egl_ver < 11) /* EGL version 1.1 */
+    {
+        LOG(LOG_LEVEL_ERROR, "egl_ver too old %d", egl_ver);
+        return 1;
+    }
+    if ((!xorgxrdp_helper_check_ext("EGL_NOK_texture_from_pixmap")) ||
+        (!xorgxrdp_helper_check_ext("EGL_MESA_image_dma_buf_export")) ||
+        (!xorgxrdp_helper_check_ext("EGL_KHR_image_base")))
+    {
+        LOG(LOG_LEVEL_ERROR, "missing ext");
+        return 1;
+    }
     eglChooseConfig(g_egl_display, g_choose_config_attr, &g_ecfg,
                     1, &g_num_config);
     LOG(LOG_LEVEL_INFO, "g_ecfg %p g_num_config %d", g_ecfg, g_num_config);
     g_egl_surface = eglCreateWindowSurface(g_egl_display, g_ecfg,
                                            g_root_window, NULL);
     LOG(LOG_LEVEL_INFO, "g_egl_surface %p", g_egl_surface);
-    eglBindAPI(EGL_OPENGL_API);
     g_egl_context = eglCreateContext(g_egl_display, g_ecfg,
                                      EGL_NO_CONTEXT, g_create_context_attr);
     LOG(LOG_LEVEL_INFO, "g_egl_context %p", g_egl_context);
     ok = eglMakeCurrent(g_egl_display, g_egl_surface, g_egl_surface,
-                        g_egl_context);
-    LOG(LOG_LEVEL_INFO, "ok %d", ok);
-
+                       g_egl_context);
+    LOG(LOG_LEVEL_INFO, "eglMakeCurrent ok %d", ok);
     return 0;
 }
 
@@ -444,12 +443,13 @@ static GLuint g_fb = 0;
 
 #define XH_SHADERCOPY           0
 #define XH_SHADERRGB2YUV420     1
-#define XH_SHADERRGB2YUV444     2
-#define XH_SHADERRGB2YUV420MV   3
-#define XH_SHADERRGB2YUV420AV   4
-#define XH_SHADERRGB2YUV420AVV2 5
+#define XH_SHADERRGB2YUV422     2
+#define XH_SHADERRGB2YUV444     3
+#define XH_SHADERRGB2YUV420MV   4
+#define XH_SHADERRGB2YUV420AV   5
+#define XH_SHADERRGB2YUV420AVV2 6
 
-#define XH_NUM_SHADERS 6
+#define XH_NUM_SHADERS 7
 
 struct shader_info
 {
@@ -468,10 +468,10 @@ static struct shader_info g_si[XH_NUM_SHADERS];
 static const GLfloat g_vertices[] =
 {
     -1.0f,  1.0f,
-        -1.0f, -1.0f,
-        1.0f,  1.0f,
-        1.0f, -1.0f
-    };
+    -1.0f, -1.0f,
+     1.0f,  1.0f,
+     1.0f, -1.0f
+};
 
 struct rgb2yuv_matrix
 {
@@ -503,14 +503,14 @@ static struct rgb2yuv_matrix g_rgb2yux_matrix[3] =
 };
 
 static const GLchar g_vs[] =
-    "\
+"\
 attribute vec4 position;\n\
 void main(void)\n\
 {\n\
     gl_Position = vec4(position.xy, 0.0, 1.0);\n\
 }\n";
 static const GLchar g_fs_copy[] =
-    "\
+"\
 uniform sampler2D tex;\n\
 uniform vec2 tex_size;\n\
 void main(void)\n\
@@ -518,7 +518,7 @@ void main(void)\n\
     gl_FragColor = texture2D(tex, gl_FragCoord.xy / tex_size);\n\
 }\n";
 static const GLchar g_fs_rgb_to_yuv420[] =
-    "\
+"\
 uniform sampler2D tex;\n\
 uniform vec2 tex_size;\n\
 uniform vec4 ymath;\n\
@@ -535,7 +535,8 @@ void main(void)\n\
     {\n\
         pix = texture2D(tex, vec2(x, y) / tex_size);\n\
         pix = vec4(pix.rgb, 1.0);\n\
-        gl_FragColor = clamp(dot(ymath, pix), 0.0, 1.0);\n\
+        pix = vec4(clamp(dot(ymath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+        gl_FragColor = pix;\n\
     }\n\
     else\n\
     {\n\
@@ -548,7 +549,8 @@ void main(void)\n\
             pix += texture2D(tex, vec2(x + 1.0, y + 1.0) / tex_size);\n\
             pix /= 4.0;\n\
             pix = vec4(pix.rgb, 1.0);\n\
-            gl_FragColor = clamp(dot(umath, pix), 0.0, 1.0);\n\
+            pix = vec4(clamp(dot(umath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+            gl_FragColor = pix;\n\
         }\n\
         else\n\
         {\n\
@@ -558,12 +560,42 @@ void main(void)\n\
             pix += texture2D(tex, vec2(x - 1.0, y + 1.0) / tex_size);\n\
             pix /= 4.0;\n\
             pix = vec4(pix.rgb, 1.0);\n\
-            gl_FragColor = clamp(dot(vmath, pix), 0.0, 1.0);\n\
+            pix = vec4(clamp(dot(vmath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+            gl_FragColor = pix;\n\
         }\n\
     }\n\
 }\n";
+static const GLchar g_fs_rgb_to_yuv422[] =
+"\
+uniform sampler2D tex;\n\
+uniform vec2 tex_size;\n\
+uniform vec4 ymath;\n\
+uniform vec4 umath;\n\
+uniform vec4 vmath;\n\
+void main(void)\n\
+{\n\
+    vec4 pix;\n\
+    vec4 pix1;\n\
+    vec4 pixs;\n\
+    float x;\n\
+    float y;\n\
+    x = gl_FragCoord.x;\n\
+    x = floor(x) * 2.0 + 0.5;\n\
+    y = gl_FragCoord.y;\n\
+    pix = texture2D(tex, vec2(x, y) / tex_size);\n\
+    pix1 = texture2D(tex, vec2(x + 1.0, y) / tex_size);\n\
+    pixs = (pix + pix1) / 2.0;\n\
+    pix.a = 1.0;\n\
+    pix1.a = 1.0;\n\
+    pixs.a = 1.0;\n\
+    pix.r = dot(ymath, pix);\n\
+    pix.g = dot(umath, pixs);\n\
+    pix.b = dot(ymath, pix1);\n\
+    pix.a = dot(vmath, pixs);\n\
+    gl_FragColor = clamp(pix, 0.0, 1.0);\n\
+}\n";
 static const GLchar g_fs_rgb_to_yuv444[] =
-    "\
+"\
 uniform sampler2D tex;\n\
 uniform vec2 tex_size;\n\
 uniform vec4 ymath;\n\
@@ -595,12 +627,15 @@ RGB
     0D 1D 2D 3D 4D 5D 6D 7D 8D 9D AD BD CD DD ED FD
     0E 1E 2E 3E 4E 5E 6E 7E 8E 9E AE BE CE DE EE FE
     0F 1F 2F 3F 4F 5F 6F 7F 8F 9F AF BF CF DF EF FF
+
 MAIN VIEW - NV12
+
     /---------------------Y-----------------------\
     00 10 20 30 40 50 60 70 80 90 A0 B0 C0 D0 E0 F0
     01 11 21 31 41 51 61 71 81 91 A1 B1 C1 D1 E1 F1
     ...
     0F 1F 2F 3F 4F 5F 6F 7F 8F 9F AF BF CF DF EF FF
+
     /U /V /U /V /U /V /U /V /U /V /U /V /U /V /U /V
     00 00 20 20 40 40 60 60 80 80 A0 A0 C0 C0 E0 E0
     02 02 22 22 42 42 62 62 82 82 A2 A2 C2 C2 E2 E2
@@ -608,7 +643,7 @@ MAIN VIEW - NV12
     0E 0E 2E 2E 4E 4E 6E 6E 8E 8E AE AE CE CE EE EE
 */
 static const GLchar g_fs_rgb_to_yuv420_mv[] =
-    "\
+"\
 uniform sampler2D tex;\n\
 uniform vec2 tex_size;\n\
 uniform vec4 ymath;\n\
@@ -625,7 +660,8 @@ void main(void)\n\
     {\n\
         pix = texture2D(tex, vec2(x, y) / tex_size);\n\
         pix = vec4(pix.rgb, 1.0);\n\
-        gl_FragColor = clamp(dot(ymath, pix), 0.0, 1.0);\n\
+        pix = vec4(clamp(dot(ymath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+        gl_FragColor = pix;\n\
     }\n\
     else\n\
     {\n\
@@ -634,18 +670,21 @@ void main(void)\n\
         {\n\
             pix = texture2D(tex, vec2(x, y) / tex_size);\n\
             pix = vec4(pix.rgb, 1.0);\n\
-            gl_FragColor = clamp(dot(umath, pix), 0.0, 1.0);\n\
+            pix = vec4(clamp(dot(umath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+            gl_FragColor = pix;\n\
         }\n\
         else\n\
         {\n\
             pix = texture2D(tex, vec2(x - 1.0, y) / tex_size);\n\
             pix = vec4(pix.rgb, 1.0);\n\
-            gl_FragColor = clamp(dot(vmath, pix), 0.0, 1.0);\n\
+            pix = vec4(clamp(dot(vmath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+            gl_FragColor = pix;\n\
         }\n\
     }\n\
 }\n";
 /*
 AUXILIARY VIEW - NV12
+
     /---------------------U-----------------------\
     01 11 21 31 41 51 61 71 81 91 A1 B1 C1 D1 E1 F1
     03 13 23 33 43 53 63 73 83 93 A3 B3 C3 D3 E3 F4
@@ -657,6 +696,7 @@ AUXILIARY VIEW - NV12
     ...
     0F 1F 2F 3F 4F 5F 6F 7F 8F 9F AF BF CF DF EF FF
     ... (8 LINES U, 8 LINES V, REPEAT)
+
     /U /V /U /V /U /V /U /V /U /V /U /V /U /V /U /V
     10 10 30 30 50 50 70 70 90 90 B0 B0 D0 D0 F0 F0
     12 12 32 32 52 52 72 72 92 92 B2 B2 D2 D2 F2 F2
@@ -664,7 +704,7 @@ AUXILIARY VIEW - NV12
     1E 1E 3E 3E 5E 5E 7E 7E 9E 9E BE BE DE DE FE FE
 */
 static const GLchar g_fs_rgb_to_yuv420_av[] =
-    "\
+"\
 uniform sampler2D tex;\n\
 uniform vec2 tex_size;\n\
 uniform vec4 umath;\n\
@@ -686,7 +726,8 @@ void main(void)\n\
             y = floor(y) * 2.0 + 1.5;\n\
             pix = texture2D(tex, vec2(x, y) / tex_size);\n\
             pix = vec4(pix.rgb, 1.0);\n\
-            gl_FragColor = clamp(dot(umath, pix), 0.0, 1.0);\n\
+            pix = vec4(clamp(dot(umath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+            gl_FragColor = pix;\n\
         }\n\
         else\n\
         {\n\
@@ -694,7 +735,8 @@ void main(void)\n\
             y = floor(y) * 2.0 + 1.5;\n\
             pix = texture2D(tex, vec2(x, y) / tex_size);\n\
             pix = vec4(pix.rgb, 1.0);\n\
-            gl_FragColor = clamp(dot(vmath, pix), 0.0, 1.0);\n\
+            pix = vec4(clamp(dot(vmath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+            gl_FragColor = pix;\n\
         }\n\
     }\n\
     else\n\
@@ -704,23 +746,27 @@ void main(void)\n\
         {\n\
             pix = texture2D(tex, vec2(x + 1.0, y) / tex_size);\n\
             pix = vec4(pix.rgb, 1.0);\n\
-            gl_FragColor = clamp(dot(umath, pix), 0.0, 1.0);\n\
+            pix = vec4(clamp(dot(umath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+            gl_FragColor = pix;\n\
         }\n\
         else\n\
         {\n\
             pix = texture2D(tex, vec2(x, y) / tex_size);\n\
             pix = vec4(pix.rgb, 1.0);\n\
-            gl_FragColor = clamp(dot(vmath, pix), 0.0, 1.0);\n\
+            pix = vec4(clamp(dot(vmath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+            gl_FragColor = pix;\n\
         }\n\
     }\n\
 }\n";
 /*
 AUXILIARY VIEW V2 - NV12
+
     /----------U----------\ /----------V----------\
     10 30 50 70 90 B0 D0 F0 10 30 50 70 90 B0 D0 F0
     11 31 51 71 91 B1 D1 F1 11 31 51 71 91 B1 D1 F1
     ...
     1F 3F 5F 7F 9F BF DF FF 1F 3F 5F 7F 9F BF DF FF
+
     /----------U----------\ /----------V----------\
     01 21 41 61 81 A1 C1 E1 01 21 41 61 81 A1 C1 E1
     03 23 43 63 83 A3 C3 E3 03 23 43 63 83 A3 C3 E3
@@ -728,7 +774,7 @@ AUXILIARY VIEW V2 - NV12
     0F 2F 4F 6F 8F AF CF EF 0F 2F 4F 6F 8F AF CF EF
 */
 static const GLchar g_fs_rgb_to_yuv420_av_v2[] =
-    "\
+"\
 uniform sampler2D tex;\n\
 uniform vec2 tex_size;\n\
 uniform vec4 umath;\n\
@@ -749,14 +795,16 @@ void main(void)\n\
             x = floor(x) * 2.0 + 1.5;\n\
             pix = texture2D(tex, vec2(x, y) / tex_size);\n\
             pix = vec4(pix.rgb, 1.0);\n\
-            gl_FragColor = clamp(dot(umath, pix), 0.0, 1.0);\n\
+            pix = vec4(clamp(dot(umath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+            gl_FragColor = pix;\n\
         }\n\
         else\n\
         {\n\
             x = floor(x - x1) * 2.0 + 1.5;\n\
             pix = texture2D(tex, vec2(x, y) / tex_size);\n\
             pix = vec4(pix.rgb, 1.0);\n\
-            gl_FragColor = clamp(dot(vmath, pix), 0.0, 1.0);\n\
+            pix = vec4(clamp(dot(vmath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+            gl_FragColor = pix;\n\
         }\n\
     }\n\
     else\n\
@@ -767,14 +815,16 @@ void main(void)\n\
             x = floor(x) * 2.0 + 0.5;\n\
             pix = texture2D(tex, vec2(x, y) / tex_size);\n\
             pix = vec4(pix.rgb, 1.0);\n\
-            gl_FragColor = clamp(dot(umath, pix), 0.0, 1.0);\n\
+            pix = vec4(clamp(dot(umath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+            gl_FragColor = pix;\n\
         }\n\
         else\n\
         {\n\
             x = floor(x - x1) * 2.0 + 0.5;\n\
             pix = texture2D(tex, vec2(x, y) / tex_size);\n\
             pix = vec4(pix.rgb, 1.0);\n\
-            gl_FragColor = clamp(dot(vmath, pix), 0.0, 1.0);\n\
+            pix = vec4(clamp(dot(vmath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+            gl_FragColor = pix;\n\
         }\n\
     }\n\
 }\n";
@@ -840,6 +890,9 @@ xorgxrdp_helper_x11_init(void)
     /* create rgb2yuv shader */
     vsource[XH_SHADERRGB2YUV420] = g_vs;
     fsource[XH_SHADERRGB2YUV420] = g_fs_rgb_to_yuv420;
+    /* create rgb2yuv shader */
+    vsource[XH_SHADERRGB2YUV422] = g_vs;
+    fsource[XH_SHADERRGB2YUV422] = g_fs_rgb_to_yuv422;
     /* create rgb2yuv shader */
     vsource[XH_SHADERRGB2YUV444] = g_vs;
     fsource[XH_SHADERRGB2YUV444] = g_fs_rgb_to_yuv444;
@@ -1136,8 +1189,13 @@ xorgxrdp_helper_x11_create_pixmap(int width, int height, int magic,
     GLuint enc_texture;
 
     mi = g_mons + (mon_id & 0xF);
+#if defined(XRDP_NVENC)
     mi->tex_format = XH_YUV420;
-    //mi->tex_format = XH_YUV444;
+#elif defined(XRDP_YAMI)
+    mi->tex_format = XH_YUV422;
+#else
+    mi->tex_format = XH_YUV444;
+#endif
     if (mi->pixmap != 0)
     {
         LOG(LOG_LEVEL_ERROR, "error already setup");
@@ -1179,6 +1237,17 @@ xorgxrdp_helper_x11_create_pixmap(int width, int height, int magic,
         mi->viewport.y = 0;
         mi->viewport.w = width;
         mi->viewport.h = height * 3 / 2;
+    }
+    else if (mi->tex_format == XH_YUV422)
+    {
+        LOG(LOG_LEVEL_INFO, "using XH_YUV422");
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width / 2, height, 0,
+                     GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, NULL);
+        mi->get_vertices = get_vertices444; /* same as 444 */
+        mi->viewport.x = 0;
+        mi->viewport.y = 0;
+        mi->viewport.w = width / 2;
+        mi->viewport.h = height;
     }
     else
     {

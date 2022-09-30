@@ -95,7 +95,7 @@ xorgxrdp_helper_yami_init(void)
         LOG(LOG_LEVEL_ERROR, "open %s failed", g_drm_name);
         return 1;
     }
-    LOG(LOG_LEVEL_INFO, "open %s ok, fd %d" g_drm_name, g_fd);
+    LOG(LOG_LEVEL_INFO, "open %s ok, fd %d", g_drm_name, g_fd);
     error = g_enc_funcs.yami_init(YI_TYPE_DRM, (void *) (size_t) g_fd);
     if (error != 0)
     {
