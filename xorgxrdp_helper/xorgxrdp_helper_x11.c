@@ -465,13 +465,15 @@ struct shader_info
 };
 static struct shader_info g_si[XH_NUM_SHADERS];
 
+/* *INDENT-OFF* */
 static const GLfloat g_vertices[] =
 {
-    -1.0f,  1.0f,
-    -1.0f, -1.0f,
+   -1.0f,  1.0f,
+   -1.0f, -1.0f,
     1.0f,  1.0f,
     1.0f, -1.0f
 };
+/* *INDENT-ON* */
 
 struct rgb2yuv_matrix
 {
