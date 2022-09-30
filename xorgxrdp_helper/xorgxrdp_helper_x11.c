@@ -280,7 +280,7 @@ static EGLint g_create_context_attr[] =
 };
 
 static const EGLint g_create_surface_attr[] =
- {
+{
     EGL_TEXTURE_TARGET, EGL_TEXTURE_2D,
     EGL_TEXTURE_FORMAT, EGL_TEXTURE_RGBA,
     EGL_NONE
@@ -324,8 +324,8 @@ xorgxrdp_helper_inf_init(void)
         return 1;
     }
     if ((!xorgxrdp_helper_check_ext("EGL_NOK_texture_from_pixmap")) ||
-        (!xorgxrdp_helper_check_ext("EGL_MESA_image_dma_buf_export")) ||
-        (!xorgxrdp_helper_check_ext("EGL_KHR_image_base")))
+            (!xorgxrdp_helper_check_ext("EGL_MESA_image_dma_buf_export")) ||
+            (!xorgxrdp_helper_check_ext("EGL_KHR_image_base")))
     {
         LOG(LOG_LEVEL_ERROR, "missing ext");
         return 1;
@@ -340,7 +340,7 @@ xorgxrdp_helper_inf_init(void)
                                      EGL_NO_CONTEXT, g_create_context_attr);
     LOG(LOG_LEVEL_INFO, "g_egl_context %p", g_egl_context);
     ok = eglMakeCurrent(g_egl_display, g_egl_surface, g_egl_surface,
-                       g_egl_context);
+                        g_egl_context);
     LOG(LOG_LEVEL_INFO, "eglMakeCurrent ok %d", ok);
     return 0;
 }
@@ -469,8 +469,8 @@ static const GLfloat g_vertices[] =
 {
     -1.0f,  1.0f,
     -1.0f, -1.0f,
-     1.0f,  1.0f,
-     1.0f, -1.0f
+    1.0f,  1.0f,
+    1.0f, -1.0f
 };
 
 struct rgb2yuv_matrix
@@ -502,23 +502,20 @@ static struct rgb2yuv_matrix g_rgb2yux_matrix[3] =
     }
 };
 
-static const GLchar g_vs[] =
-"\
+static const GLchar g_vs[] = "\
 attribute vec4 position;\n\
 void main(void)\n\
 {\n\
     gl_Position = vec4(position.xy, 0.0, 1.0);\n\
 }\n";
-static const GLchar g_fs_copy[] =
-"\
+static const GLchar g_fs_copy[] = "\
 uniform sampler2D tex;\n\
 uniform vec2 tex_size;\n\
 void main(void)\n\
 {\n\
     gl_FragColor = texture2D(tex, gl_FragCoord.xy / tex_size);\n\
 }\n";
-static const GLchar g_fs_rgb_to_yuv420[] =
-"\
+static const GLchar g_fs_rgb_to_yuv420[] = "\
 uniform sampler2D tex;\n\
 uniform vec2 tex_size;\n\
 uniform vec4 ymath;\n\
@@ -565,8 +562,7 @@ void main(void)\n\
         }\n\
     }\n\
 }\n";
-static const GLchar g_fs_rgb_to_yuv422[] =
-"\
+static const GLchar g_fs_rgb_to_yuv422[] = "\
 uniform sampler2D tex;\n\
 uniform vec2 tex_size;\n\
 uniform vec4 ymath;\n\
@@ -594,8 +590,7 @@ void main(void)\n\
     pix.a = dot(vmath, pixs);\n\
     gl_FragColor = clamp(pix, 0.0, 1.0);\n\
 }\n";
-static const GLchar g_fs_rgb_to_yuv444[] =
-"\
+static const GLchar g_fs_rgb_to_yuv444[] = "\
 uniform sampler2D tex;\n\
 uniform vec2 tex_size;\n\
 uniform vec4 ymath;\n\
@@ -642,8 +637,7 @@ MAIN VIEW - NV12
     ...
     0E 0E 2E 2E 4E 4E 6E 6E 8E 8E AE AE CE CE EE EE
 */
-static const GLchar g_fs_rgb_to_yuv420_mv[] =
-"\
+static const GLchar g_fs_rgb_to_yuv420_mv[] = "\
 uniform sampler2D tex;\n\
 uniform vec2 tex_size;\n\
 uniform vec4 ymath;\n\
@@ -703,8 +697,7 @@ AUXILIARY VIEW - NV12
     ...
     1E 1E 3E 3E 5E 5E 7E 7E 9E 9E BE BE DE DE FE FE
 */
-static const GLchar g_fs_rgb_to_yuv420_av[] =
-"\
+static const GLchar g_fs_rgb_to_yuv420_av[] = "\
 uniform sampler2D tex;\n\
 uniform vec2 tex_size;\n\
 uniform vec4 umath;\n\
@@ -773,8 +766,7 @@ AUXILIARY VIEW V2 - NV12
     ...
     0F 2F 4F 6F 8F AF CF EF 0F 2F 4F 6F 8F AF CF EF
 */
-static const GLchar g_fs_rgb_to_yuv420_av_v2[] =
-"\
+static const GLchar g_fs_rgb_to_yuv420_av_v2[] = "\
 uniform sampler2D tex;\n\
 uniform vec2 tex_size;\n\
 uniform vec4 umath;\n\
