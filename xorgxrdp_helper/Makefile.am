@@ -10,14 +10,14 @@ if XRDP_NVENC
 AM_CPPFLAGS += -DXRDP_NVENC
 AM_CPPFLAGS += $(XRDP_NVENC_CFLAGS)
 XRDP_EXTRA_LIBS += $(XRDP_NVENC_LIBS)
-XRDP_EXTRA_SOURCES += xorgxrdp_helper_nvenc.c xorgxrdp_helper_nvenc.h
+XRDP_EXTRA_SOURCES += xorgxrdp_helper_nvenc.c xorgxrdp_helper_nvenc.h encoder_headers/nvEncodeAPI.h
 endif
 
 if XRDP_YAMI
 AM_CPPFLAGS += -DXRDP_YAMI
 AM_CPPFLAGS += $(XRDP_YAMI_CFLAGS)
 XRDP_EXTRA_LIBS += $(XRDP_YAMI_LIBS)
-XRDP_EXTRA_SOURCES += xorgxrdp_helper_yami.c xorgxrdp_helper_yami.h
+XRDP_EXTRA_SOURCES += xorgxrdp_helper_yami.c xorgxrdp_helper_yami.h encoder_headers/yami_inf.h
 endif
 
 bin_PROGRAMS = \
