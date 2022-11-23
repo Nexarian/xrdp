@@ -128,8 +128,6 @@ in
             libxrandr-dev:i386 \
             libxrender-dev:i386 \
             libxrender-dev:i386 \
-            libselinux-dev:i386 \
-            libfuse-dev:i386 \
             libepoxy-dev:i386 \
             libepoxy0:i386"
         dpkg --add-architecture i386
