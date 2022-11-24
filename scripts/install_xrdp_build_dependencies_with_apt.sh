@@ -104,6 +104,11 @@ in
         esac
         ;;
     i386)
+        # This list is not as complete as the amd64 list. It currently
+        # supports 32-bit CI building only, rather than being a generic
+        # build support tool.
+        # - Ubuntu 18.04 -> 20.04
+        #       Removed fdk-aac-dev:i386 and libfuse-dev:i386
         PACKAGES="$PACKAGES \
             g++-multilib \
             gcc-multilib \
@@ -114,7 +119,6 @@ in
             libjpeg-dev:i386 \
             libimlib2-dev:i386 \
             libmp3lame-dev:i386 \
-            libfdk-aac-dev:i386 \
             libopus-dev:i386 \
             libpam0g-dev:i386 \
             libssl-dev:i386 \
@@ -123,7 +127,6 @@ in
             libxfixes-dev:i386 \
             libxrandr-dev:i386 \
             libxrender-dev:i386 \
-            libfuse-dev:i386 \
             libepoxy-dev:i386 \
             libepoxy0:i386"
         dpkg --add-architecture i386

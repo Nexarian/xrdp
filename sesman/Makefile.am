@@ -68,8 +68,18 @@ xrdp_sesman_LDADD = \
 
 sesmansysconfdir=$(sysconfdir)/xrdp
 
+if XRDP_YAMI
+ldlibrarypath=LD_LIBRARY_PATH=/opt/yami/lib
+libvadriverspath=LIBVA_DRIVERS_PATH=/opt/yami/lib/dri
+else
+ldlibrarypath=
+libvadriverspath=
+endif
+
 SUBST_VARS = sed \
-   -e 's|@sesmansysconfdir[@]|$(sesmansysconfdir)|g'
+   -e 's|@sesmansysconfdir[@]|$(sesmansysconfdir)|g' \
+   -e 's|@ldlibrarypath[@]|$(ldlibrarypath)|g' \
+   -e 's|@libvadriverspath[@]|$(libvadriverspath)|g'
 
 subst_verbose = $(subst_verbose_@AM_V@)
 subst_verbose_ = $(subst_verbose_@AM_DEFAULT_V@)

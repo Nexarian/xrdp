@@ -30,11 +30,27 @@
 #include "os_calls.h"
 #include "string_calls.h"
 
+enum
+{
+    /* Field offsets in the UUID */
+    E_CLOCK_SEQ_HI_AND_RESERVED = 8,
+    E_TIME_HI_AND_VERSION_MSB = 7,
+    /* UUID versions from RFC4122 section 4.1.3 */
+    E_UUID_VERSION_RANDOM = 4
+};
+
 struct guid
 guid_new(void)
 {
     struct guid guid = {0};
     g_random(guid.g, sizeof(guid.g));
+    /* Show this UUID as conforming to RFC4122 (section 4.1.1) */
+    guid.g[E_CLOCK_SEQ_HI_AND_RESERVED] &= ~0x40; /* Clear bit 6 */
+    guid.g[E_CLOCK_SEQ_HI_AND_RESERVED] |= (char)0x80; /* Set bit 7 */
+
+    guid.g[E_TIME_HI_AND_VERSION_MSB] &= ~0xf0;
+    guid.g[E_TIME_HI_AND_VERSION_MSB] |= (E_UUID_VERSION_RANDOM << 4);
+
     return guid;
 }
 
@@ -65,8 +81,20 @@ guid_is_set(const struct guid *guid)
 
 }
 
-const char *guid_to_str(const struct guid *guid, char *str)
+const char *guid_to_str(const struct guid *src, char *dest)
 {
-    g_bytes_to_hexstr(guid->g, GUID_SIZE, str, GUID_STR_SIZE);
-    return str;
+    const unsigned char *guid = (const unsigned char *)src->g;
+
+    /*
+     * Flipping integers into little-endian
+     * See also: https://devblogs.microsoft.com/oldnewthing/20220928-00/?p=107221
+     */
+    g_sprintf(dest, "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+              guid[3], guid[2], guid[1], guid[0],
+              guid[5], guid[4],
+              guid[7], guid[6],
+              guid[8], guid[9],
+              guid[10], guid[11], guid[12], guid[13], guid[14], guid[15]);
+
+    return dest;
 }
