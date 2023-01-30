@@ -24,8 +24,11 @@
 
 #include "libxrdp.h"
 #include "ms-rdpbcgr.h"
+#include "ms-rdpedisp.h"
 #include "log.h"
 #include "string_calls.h"
+#include <limits.h>
+
 
 /* some compilers need unsigned char to avoid warnings */
 static tui8 g_pad_54[40] =

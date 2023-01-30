@@ -143,7 +143,7 @@ EnableSyslog=true
 param=Xorg
 ; Leave the rest parameters as-is unless you understand what will happen.
 param=-config
-param=xrdp/xorg.conf
+param=@xorgconfigfile@
 param=-noreset
 param=-nolisten
 param=tcp
@@ -206,3 +206,8 @@ EnableSyslog=true
 
 [SessionVariables]
 PULSE_SCRIPT=@sesmansysconfdir@/pulse/default.pa
+XRDP_USE_HELPER=1
+XRDP_NVENC_RATE_CONTROL_MODE=NV_ENC_PARAMS_RC_CONSTQP
+XRDP_NVENC_QP=22
+@ldlibrarypath@
+@libvadriverspath@

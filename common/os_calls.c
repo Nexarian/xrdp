@@ -159,6 +159,50 @@ g_init(const char *app_name)
 
     WSAStartup(2, &wsadata);
 #endif
+    /* In order to get g_mbstowcs and g_wcstombs to work properly with
+       UTF-8 non-ASCII characters, LC_CTYPE cannot be "C" or blank.
+       To select UTF-8 encoding without specifying any countries/languages,
+       "C.UTF-8" is used but provided in few systems.
+
+       See also: https://sourceware.org/glibc/wiki/Proposals/C.UTF-8 */
+    char *lc_ctype;
+    lc_ctype = setlocale(LC_CTYPE, "C.UTF-8");
+    if (lc_ctype == NULL)
+    {
+        /* use en_US.UTF-8 instead if not available */
+        setlocale(LC_CTYPE, "en_US.UTF-8");
+    }
+
+#if defined(XRDP_NVENC)
+    if (g_strcmp(app_name, "xrdp") == 0)
+    {
+        /* call cuInit() to initalize the nvidia drivers */
+        /* TODO create an issue on nvidia forums to figure out why we need to
+        *  do this */
+        if (g_fork() == 0)
+        {
+            typedef int (*cu_init_proc)(int flags);
+            cu_init_proc cu_init;
+            long lib;
+            char cuda_lib_name[] = "libcuda.so";
+            char cuda_func_name[] = "cuInit";
+
+            lib = g_load_library(cuda_lib_name);
+            if (lib != 0)
+            {
+                cu_init = (cu_init_proc)
+                          g_get_proc_address(lib, cuda_func_name);
+                if (cu_init != NULL)
+                {
+                    cu_init(0);
+                }
+            }
+            log_end();
+            g_deinit();
+            g_exit(0);
+        }
+    }
+#endif
 }
 
 /*****************************************************************************/

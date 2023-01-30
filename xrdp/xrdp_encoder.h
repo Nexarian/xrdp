@@ -42,8 +42,12 @@ struct xrdp_enc_data
 {
     struct xrdp_mod *mod;
     int num_drects;
+    int pad0;
+    // Damage Rects (Damage as reported by X/drivers)
     short *drects;     /* 4 * num_drects */
     int num_crects;
+    int pad1;
+    // Change Rects (Actual change being communicated)
     short *crects;     /* 4 * num_crects */
     char *data;
     int left;

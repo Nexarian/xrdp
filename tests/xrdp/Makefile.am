@@ -23,6 +23,16 @@ EXTRA_DIST = \
 TESTS = test_xrdp
 check_PROGRAMS = test_xrdp
 
+XRDP_EXTRA_LIBS =
+
+if XRDP_X264
+AM_CPPFLAGS += -DXRDP_X264
+AM_CPPFLAGS += $(XRDP_X264_CFLAGS)
+XRDP_EXTRA_LIBS += \
+  $(top_builddir)/xrdp/xrdp_encoder_x264.o \
+  $(XRDP_X264_LIBS)
+endif
+
 test_xrdp_SOURCES = \
     test_xrdp.h \
     test_xrdp_main.c \
@@ -63,5 +73,6 @@ test_xrdp_LDADD = \
     $(top_builddir)/xrdp/xrdp_main_utils.o \
     $(PIXMAN_LIBS) \
     $(IMLIB2_LIBS) \
+    $(XRDP_EXTRA_LIBS) \
     @CHECK_LIBS@ \
     @CMOCKA_LIBS@

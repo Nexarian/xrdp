@@ -133,7 +133,6 @@ xrdp_painter_send_dirty(struct xrdp_painter *self)
             }
             LOG_DEVEL(LOG_LEVEL_DEBUG, "xrdp_painter_send_dirty:"
                       " x %d y %d cx %d cy %d",
-                      rect.left, rect.top, cx, cy);
             libxrdp_send_bitmap(self->session, cx, cy, bpp,
                                 ldata, rect.left, rect.top, cx, cy);
             g_free(ldata);
@@ -163,7 +162,6 @@ xrdp_painter_create(struct xrdp_wm *wm, struct xrdp_session *session)
     self->session = session;
     self->rop = 0xcc; /* copy will use 0xcc */
     self->clip_children = 1;
-
     if (self->session->client_info->no_orders_supported ||
             self->session->client_info->gfx)
     {
