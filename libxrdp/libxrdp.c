@@ -2277,6 +2277,7 @@ libxrdp_process_monitor_ex_stream(struct stream *s,
 
     return 0;
 }
+
 /*****************************************************************************/
 int EXPORT_CC
 libxrdp_planar_compress(char *in_data, int width, int height,

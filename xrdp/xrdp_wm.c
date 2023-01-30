@@ -68,7 +68,6 @@ xrdp_wm_create(struct xrdp_process *owner,
 
     /* to store configuration from xrdp.ini */
     self->xrdp_config = g_new0(struct xrdp_config, 1);
-
     return self;
 }
 
@@ -80,7 +79,6 @@ xrdp_wm_delete(struct xrdp_wm *self)
     {
         return;
     }
-
     xrdp_region_delete(self->screen_dirty_region);
     xrdp_mm_delete(self->mm);
     xrdp_cache_delete(self->cache);
@@ -767,10 +765,19 @@ xrdp_wm_init(struct xrdp_wm *self)
                     list_add_strdup(self->mm->login_values, r);
                 }
 
-                /*
-                 * Skip the login box and go straight to the connection phase
-                 */
-                xrdp_wm_set_login_state(self, WMLS_START_CONNECT);
+                if (self->session->client_info->gfx && !self->mm->egfx_up)
+                {
+                    /* gfx session but have not recieved caps advertise yet,
+                       set flag so we will connect to backend later */
+                    self->mm->gfx_delay_autologin = 1;
+                }
+                else
+                {
+                    /*
+                    * Skip the login box and go straight to the connection phase
+                    */
+                    xrdp_wm_set_login_state(self, WMLS_START_CONNECT);
+                }
             }
             else
             {

@@ -180,6 +180,39 @@ g_init(const char *app_name)
         /* use en_US.UTF-8 instead if not available */
         setlocale(LC_CTYPE, "en_US.UTF-8");
     }
+
+    g_mk_socket_path(app_name);
+
+#if defined(XRDP_NVENC)
+    if (g_strcmp(app_name, "xrdp") == 0)
+    {
+        /* call cuInit() to initalize the nvidia drivers */
+        /* TODO create an issue on nvidia forums to figure out why we need to
+        *  do this */
+        if (g_fork() == 0)
+        {
+            typedef int (*cu_init_proc)(int flags);
+            cu_init_proc cu_init;
+            long lib;
+            char cuda_lib_name[] = "libcuda.so";
+            char cuda_func_name[] = "cuInit";
+
+            lib = g_load_library(cuda_lib_name);
+            if (lib != 0)
+            {
+                cu_init = (cu_init_proc)
+                          g_get_proc_address(lib, cuda_func_name);
+                if (cu_init != NULL)
+                {
+                    cu_init(0);
+                }
+            }
+            log_end();
+            g_deinit();
+            g_exit(0);
+        }
+    }
+#endif
 }
 
 /*****************************************************************************/
