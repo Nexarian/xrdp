@@ -591,7 +591,7 @@ process_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     int error;
     char *out_data;
     XRDP_ENC_DATA_DONE *enc_done;
-    FIFO *fifo_processed;
+    struct fifo *fifo_processed;
     tbus mutex;
     tbus event_processed;
     struct stream ls;

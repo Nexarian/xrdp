@@ -181,8 +181,6 @@ g_init(const char *app_name)
         setlocale(LC_CTYPE, "en_US.UTF-8");
     }
 
-    g_mk_socket_path(app_name);
-
 #if defined(XRDP_NVENC)
     if (g_strcmp(app_name, "xrdp") == 0)
     {
