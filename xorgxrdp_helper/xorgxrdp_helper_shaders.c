@@ -39,8 +39,6 @@ void main(void)\n\
     gl_FragColor = texture(tex, gl_FragCoord.xy / tex_size);\n\
 }\n";
 
-/*
-Original version.
 static const GLchar g_fs_rgb_to_yuv420[] = "\
 uniform sampler2D tex;\n\
 uniform vec2 tex_size;\n\
@@ -87,50 +85,6 @@ void main(void)\n\
             gl_FragColor = pix;\n\
         }\n\
     }\n\
-}\n";
-*/
-
-// Optimized version.
-static const GLchar g_fs_rgb_to_yuv420[] = "\
-#version 460 core\n\
-uniform sampler2D tex;\n\
-uniform vec2 tex_size;\n\
-uniform vec4 ymath;\n\
-uniform vec4 umath;\n\
-uniform vec4 vmath;\n\
-out vec4 FragColor;\n\
-void main()\n\
-{\n\
-    vec4 pix;\n\
-    float x = gl_FragCoord.x;\n\
-    float y = gl_FragCoord.y;\n\
-    if (y < tex_size.y)\n\
-    {\n\
-        pix = texture(tex, vec2(x, y) / tex_size);\n\
-        pix.a = 1.0;\n\
-        pix.r = clamp(dot(ymath, pix), 0.0, 1.0);\n\
-    }\n\
-    else\n\
-    {\n\
-        y = floor(y - tex_size.y) * 2.0 + 0.5;\n\
-        float xOffset = mod(x, 2.0);\n\
-        float antiAliasMod = xOffset == 0 ? 1.0 : -1.0;\n\
-        pix = texture(tex, vec2(x - xOffset, y) / tex_size);\n\
-        pix += texture(tex, vec2(x - xOffset + antiAliasMod, y) / tex_size);\n\
-        pix += texture(tex, vec2(x - xOffset, y + 1.0) / tex_size);\n\
-        pix += texture(tex, vec2(x - xOffset + antiAliasMod, y + 1.0) / tex_size);\n\
-        pix /= 4.0;\n\
-        pix.a = 1.0;\n\
-        if (xOffset < 1.0)\n\
-        {\n\
-            pix.r = clamp(dot(umath, pix), 0.0, 1.0);\n\
-        }\n\
-        else\n\
-        {\n\
-            pix.r = clamp(dot(vmath, pix), 0.0, 1.0);\n\
-        }\n\
-    }\n\
-    FragColor = vec4(pix.r, 0.0, 0.0, 1.0);\n\
 }\n";
 
 static const GLchar g_fs_rgb_to_yuv422[] = "\
@@ -215,12 +169,16 @@ MAIN VIEW - NV12
     Keeping this now because this is a dev prototype, but we might
     want to remove this in the future.
 */
+
+/*
 static const GLchar g_fs_rgb_to_yuv420_mv[] = "\
+#version 460 core\n\
 uniform sampler2D tex;\n\
 uniform vec2 tex_size;\n\
 uniform vec4 ymath;\n\
 uniform vec4 umath;\n\
 uniform vec4 vmath;\n\
+out vec4 FragColor;\n\
 void main(void)\n\
 {\n\
     vec4 pix;\n\
@@ -230,37 +188,80 @@ void main(void)\n\
     y = gl_FragCoord.y;\n\
     if (y < tex_size.y)\n\
     {\n\
-        pix = texture2D(tex, vec2(x, y) / tex_size);\n\
+        pix = texture(tex, vec2(x, y) / tex_size);\n\
         pix.a = 1.0;\n\
         pix = vec4(clamp(dot(ymath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
-        gl_FragColor = pix;\n\
+        FragColor = pix;\n\
     }\n\
     else\n\
     {\n\
         y = floor(y - tex_size.y) * 2.0 + 0.5;\n\
         if (mod(x, 2.0) < 1.0)\n\
         {\n\
-            pix = texture2D(tex, vec2(x, y) / tex_size);\n\
-            pix += texture2D(tex, vec2(x + 1.0, y) / tex_size);\n\
-            pix += texture2D(tex, vec2(x, y + 1.0) / tex_size);\n\
-            pix += texture2D(tex, vec2(x + 1.0, y + 1.0) / tex_size);\n\
-            pix /= 4.0;\n\
+            pix = texture(tex, vec2(x, y) / tex_size);\n\
+            pix += texture(tex, vec2(x + 1.0, y) / tex_size);\n\
+            pix += texture(tex, vec2(x, y + 1.0) / tex_size);\n\
+            pix += texture(tex, vec2(x + 1.0, y + 1.0) / tex_size);\n\
+            pix *= 0.25;\n\
             pix.a = 1.0;\n\
             pix = vec4(clamp(dot(umath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
-            gl_FragColor = pix;\n\
+            FragColor = pix;\n\
         }\n\
         else\n\
         {\n\
-            pix = texture2D(tex, vec2(x, y) / tex_size);\n\
-            pix += texture2D(tex, vec2(x - 1.0, y) / tex_size);\n\
-            pix += texture2D(tex, vec2(x, y + 1.0) / tex_size);\n\
-            pix += texture2D(tex, vec2(x - 1.0, y + 1.0) / tex_size);\n\
-            pix /= 4.0;\n\
+            pix = texture(tex, vec2(x, y) / tex_size);\n\
+            pix += texture(tex, vec2(x + 1.0, y) / tex_size);\n\
+            pix += texture(tex, vec2(x, y + 1.0) / tex_size);\n\
+            pix += texture(tex, vec2(x + 1.0, y + 1.0) / tex_size);\n\
+            pix *= 0.25;\n\
             pix.a = 1.0;\n\
             pix = vec4(clamp(dot(vmath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
-            gl_FragColor = pix;\n\
+            FragColor = pix;\n\
         }\n\
     }\n\
+}\n";
+*/
+
+static const GLchar g_fs_rgb_to_yuv420_mv[] = "\
+#version 460 core\n\
+uniform sampler2D tex;\n\
+uniform vec2 tex_size;\n\
+uniform vec4 ymath;\n\
+uniform vec4 umath;\n\
+uniform vec4 vmath;\n\
+out vec4 FragColor;\n\
+void main()\n\
+{\n\
+    vec4 pix;\n\
+    float x = gl_FragCoord.x;\n\
+    float y = gl_FragCoord.y;\n\
+    if (y < tex_size.y)\n\
+    {\n\
+        pix = texture(tex, vec2(x, y) / tex_size);\n\
+        pix.a = 1.0;\n\
+        pix.r = clamp(dot(ymath, pix), 0.0, 1.0);\n\
+    }\n\
+    else\n\
+    {\n\
+        y = floor(y - tex_size.y) * 2.0 + 0.5;\n\
+        float xOffset = mod(x, 2.0);\n\
+        float antiAliasMod = xOffset == 0 ? 1.0 : -1.0;\n\
+        pix = texture(tex, vec2(x - xOffset, y) / tex_size);\n\
+        pix += texture(tex, vec2(x - xOffset + antiAliasMod, y) / tex_size);\n\
+        pix += texture(tex, vec2(x - xOffset, y + 1.0) / tex_size);\n\
+        pix += texture(tex, vec2(x - xOffset + antiAliasMod, y + 1.0) / tex_size);\n\
+        pix /= 4.0;\n\
+        pix.a = 1.0;\n\
+        if (xOffset < 1.0)\n\
+        {\n\
+            pix.r = clamp(dot(umath, pix), 0.0, 1.0);\n\
+        }\n\
+        else\n\
+        {\n\
+            pix.r = clamp(dot(vmath, pix), 0.0, 1.0);\n\
+        }\n\
+    }\n\
+    FragColor = vec4(pix.r, 0.0, 0.0, 1.0);\n\
 }\n";
 
 /*
@@ -339,6 +340,7 @@ void main(void)\n\
     }\n\
 }\n";
 
+
 /*
 AUXILIARY VIEW V2 - NV12
 
@@ -354,57 +356,35 @@ AUXILIARY VIEW V2 - NV12
     ...
     0F 2F 4F 6F 8F AF CF EF 0F 2F 4F 6F 8F AF CF EF
 */
+
 static const GLchar g_fs_rgb_to_yuv420_av_v2[] = "\
+#version 460 core\n\
 uniform sampler2D tex;\n\
 uniform vec2 tex_size;\n\
 uniform vec4 umath;\n\
 uniform vec4 vmath;\n\
+out vec4 FragColor;\n\
 void main(void)\n\
 {\n\
-    vec4 pix;\n\
-    float x;\n\
-    float y;\n\
-    float x1;\n\
-    x = gl_FragCoord.x;\n\
-    y = gl_FragCoord.y;\n\
-    x1 = tex_size.x / 2.0;\n\
-    if (y < tex_size.y)\n\
+    vec4 pix[4];\n\
+    vec2 coords[4];\n\
+    float x = gl_FragCoord.x;\n\
+    float y = gl_FragCoord.y;\n\
+    float x1 = tex_size.x / 2.0;\n\
+    float y1 = tex_size.y / 2.0;\n\
+    float adjustedY = floor(y - tex_size.y) * 2.0 + 1.5;\n\
+    coords[0] = vec2(floor(x) * 2.0 + 1.5, y);\n\
+    coords[1] = vec2(floor(x - x1) * 2.0 + 1.5, y);\n\
+    coords[2] = vec2(floor(x) * 2.0 + 0.5, adjustedY);\n\
+    coords[3] = vec2(floor(x - x1) * 2.0 + 0.5, adjustedY);\n\
+    for (int i = 0; i < 4; i++)\n\
     {\n\
-        if (x < x1)\n\
-        {\n\
-            x = floor(x) * 2.0 + 1.5;\n\
-            pix = texture2D(tex, vec2(x, y) / tex_size);\n\
-            pix.a = 1.0;\n\
-            pix = vec4(clamp(dot(umath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
-            gl_FragColor = pix;\n\
-        }\n\
-        else\n\
-        {\n\
-            x = floor(x - x1) * 2.0 + 1.5;\n\
-            pix = texture2D(tex, vec2(x, y) / tex_size);\n\
-            pix.a = 1.0;\n\
-            pix = vec4(clamp(dot(vmath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
-            gl_FragColor = pix;\n\
-        }\n\
+        pix[i] = texture(tex, coords[i] / tex_size);\n\
+        pix[i].a = 1.0;\n\
     }\n\
-    else\n\
-    {\n\
-        y = floor(y - tex_size.y) * 2.0 + 1.5;\n\
-        if (x < x1)\n\
-        {\n\
-            x = floor(x) * 2.0 + 0.5;\n\
-            pix = texture2D(tex, vec2(x, y) / tex_size);\n\
-            pix.a = 1.0;\n\
-            pix = vec4(clamp(dot(umath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
-            gl_FragColor = pix;\n\
-        }\n\
-        else\n\
-        {\n\
-            x = floor(x - x1) * 2.0 + 0.5;\n\
-            pix = texture2D(tex, vec2(x, y) / tex_size);\n\
-            pix.a = 1.0;\n\
-            pix = vec4(clamp(dot(vmath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
-            gl_FragColor = pix;\n\
-        }\n\
-    }\n\
+    pix[0] = vec4(clamp(dot(umath, pix[0]), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+    pix[1] = vec4(clamp(dot(vmath, pix[1]), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+    pix[2] = vec4(clamp(dot(umath, pix[2]), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+    pix[3] = vec4(clamp(dot(vmath, pix[3]), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
+    FragColor = pix[int(y < tex_size.y ? (x < x1 ? 0 : 1) : (x < x1 ? 2 : 3))];\n\
 }\n";
