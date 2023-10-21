@@ -142,8 +142,8 @@ xorgxrdp_helper_nvenc_create_encoder(int width, int height, int tex,
     g_memset(&createEncodeParams, 0, sizeof(createEncodeParams));
     createEncodeParams.version = NV_ENC_INITIALIZE_PARAMS_VER;
     createEncodeParams.encodeGUID = NV_ENC_CODEC_H264_GUID;
-    createEncodeParams.presetGUID = NV_ENC_PRESET_P4_GUID;
-    createEncodeParams.tuningInfo = NV_ENC_TUNING_INFO_ULTRA_LOW_LATENCY;
+    createEncodeParams.presetGUID = NV_ENC_PRESET_P7_GUID;
+    createEncodeParams.tuningInfo = NV_ENC_TUNING_INFO_LOW_LATENCY;
     createEncodeParams.encodeWidth = width;
     createEncodeParams.encodeHeight = height;
     createEncodeParams.darWidth = width;
@@ -155,10 +155,10 @@ xorgxrdp_helper_nvenc_create_encoder(int width, int height, int tex,
     preset_config.presetCfg.version = NV_ENC_CONFIG_VER;
 
     nv_error = g_enc_funcs.nvEncGetEncodePresetConfigEx(
-                   lei->enc, createEncodeParams.encodeGUID,
-                   createEncodeParams.presetGUID,
-                   createEncodeParams.tuningInfo,
-                   &preset_config);
+               lei->enc, createEncodeParams.encodeGUID,
+               createEncodeParams.presetGUID,
+               createEncodeParams.tuningInfo,
+               &preset_config);
 
     LOG(LOG_LEVEL_INFO, "nvEncGetEncodePresetConfig rv %d", nv_error);
     if (nv_error != NV_ENC_SUCCESS)
@@ -167,9 +167,12 @@ xorgxrdp_helper_nvenc_create_encoder(int width, int height, int tex,
     }
 
     g_memset(&encCfg, 0, sizeof(encCfg));
+
     encCfg.version = NV_ENC_CONFIG_VER;
+    memcpy(&encCfg, &preset_config.presetCfg, sizeof(NV_ENC_CONFIG));
     encCfg.profileGUID = NV_ENC_H264_PROFILE_MAIN_GUID;
-    encCfg.gopLength = NVENC_INFINITE_GOPLENGTH;
+    //encCfg.gopLength = NVENC_INFINITE_GOPLENGTH;
+    encCfg.gopLength = 10;
     encCfg.frameIntervalP = 1;  /* 1 + B_Frame_Count */
     encCfg.frameFieldMode = NV_ENC_PARAMS_FRAME_FIELD_MODE_FRAME;
     encCfg.mvPrecision = NV_ENC_MV_PRECISION_QUARTER_PEL;
@@ -236,14 +239,30 @@ xorgxrdp_helper_nvenc_create_encoder(int width, int height, int tex,
     }
     encCfg.rcParams.cbQPIndexOffset = -1;
     encCfg.encodeCodecConfig.h264Config.chromaFormatIDC = 1;
-    encCfg.encodeCodecConfig.h264Config.idrPeriod = NVENC_INFINITE_GOPLENGTH;
+    encCfg.encodeCodecConfig.h264Config.idrPeriod = 2;
     encCfg.encodeCodecConfig.h264Config.repeatSPSPPS = 1;
     encCfg.encodeCodecConfig.h264Config.disableSPSPPS = 0;
+    //encCfg.encodeCodecConfig.h264Config.maxNumRefFrames = 1;
+    encCfg.encodeCodecConfig.h264Config.sliceMode = 0;
+    encCfg.encodeCodecConfig.h264Config.sliceModeData = 0;
     encCfg.encodeCodecConfig.h264Config.outputAUD = 1;
+    encCfg.encodeCodecConfig.h264Config.outputBufferingPeriodSEI = 1;
+    encCfg.encodeCodecConfig.h264Config.outputPictureTimingSEI = 1;
+    encCfg.encodeCodecConfig.h264Config.level = NV_ENC_LEVEL_AUTOSELECT;
+    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoFullRangeFlag = 1;
+    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoSignalTypePresentFlag = 1;
+    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoFormat = NV_ENC_VUI_VIDEO_FORMAT_UNSPECIFIED;
+    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.bitstreamRestrictionFlag = 1;
+    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourDescriptionPresentFlag = 1;
+    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
+    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_BT709;
+    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT709;
 
     createEncodeParams.encodeConfig = &encCfg;
+
     nv_error = g_enc_funcs.nvEncInitializeEncoder(lei->enc,
                &createEncodeParams);
+
     LOG(LOG_LEVEL_INFO, "nvEncInitializeEncoder rv %d", nv_error);
     if (nv_error != NV_ENC_SUCCESS)
     {
@@ -339,58 +358,85 @@ xorgxrdp_helper_nvenc_encode(struct enc_info *ei, int tex,
     picParams.inputWidth = ei->width;
     picParams.inputHeight = ei->height;
     picParams.outputBitstream = ei->bitstreamBuffer;
-    picParams.inputTimeStamp = ei->frameCount;
+    picParams.inputTimeStamp = g_time3();
     picParams.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
     if (xrdp_invalidate > 0 || ei->frameCount == 0)
     {
-        picParams.encodePicFlags |= NV_ENC_PIC_FLAG_FORCEIDR;
-        picParams.encodePicFlags |= NV_ENC_PIC_FLAG_OUTPUT_SPSPPS;
-        picParams.encodePicFlags |= NV_ENC_PIC_FLAG_FORCEINTRA;
+        picParams.encodePicFlags = NV_ENC_PIC_FLAG_OUTPUT_SPSPPS | NV_ENC_PIC_FLAG_FORCEIDR | NV_ENC_PIC_FLAG_FORCEINTRA;
+        picParams.pictureType = NV_ENC_PIC_TYPE_IDR;
         LOG(LOG_LEVEL_INFO, "Forcing NVENC H264 IDR SPSPPS for frame id: %d,"
             "invalidate is: %d", ei->frameCount, xrdp_invalidate);
         xrdp_invalidate = MAX(0, xrdp_invalidate - 1);
     }
+    else
+    {
+        picParams.pictureType = NV_ENC_PIC_TYPE_NONREF_P;
+        picParams.encodePicFlags = 0;
+    }
     nv_error = g_enc_funcs.nvEncEncodePicture(ei->enc, &picParams);
     rv = ENCODER_ERROR;
-    if (nv_error != NV_ENC_SUCCESS)
-    {
-        LOG(LOG_LEVEL_ERROR, "error nvEncEncodePicture %d", nv_error);
-        return rv;
-    }
-    g_memset(&lockBitstream, 0, sizeof(lockBitstream));
-    lockBitstream.version = NV_ENC_LOCK_BITSTREAM_VER;
-    lockBitstream.outputBitstream = ei->bitstreamBuffer;
-    lockBitstream.doNotWait = 0;
-    nv_error = g_enc_funcs.nvEncLockBitstream(ei->enc, &lockBitstream);
     if (nv_error == NV_ENC_SUCCESS)
     {
-        if (*cdata_bytes >= ((int) (lockBitstream.bitstreamSizeInBytes)))
+        g_memset(&lockBitstream, 0, sizeof(lockBitstream));
+        lockBitstream.version = NV_ENC_LOCK_BITSTREAM_VER;
+        lockBitstream.outputBitstream = ei->bitstreamBuffer;
+        lockBitstream.doNotWait = 0;
+        nv_error = g_enc_funcs.nvEncLockBitstream(ei->enc, &lockBitstream);
+        if (nv_error == NV_ENC_SUCCESS)
         {
-            g_memcpy(cdata, lockBitstream.bitstreamBufferPtr,
-                     lockBitstream.bitstreamSizeInBytes);
-            *cdata_bytes = lockBitstream.bitstreamSizeInBytes;
-            rv = INCREMENTAL_FRAME_ENCODED;
+            if (*cdata_bytes >= ((int) (lockBitstream.bitstreamSizeInBytes)))
+            {
+                /* for (int i = 0; i < lockBitstream.bitstreamSizeInBytes; ++i)
+                {
+                    unsigned char* payload = (unsigned char*)lockBitstream.bitstreamBufferPtr + i;
+                    bool b_long_startcode = payload[0] == 0 && payload[1] == 0
+                        && payload[2] == 0 && payload[3] == 1;
+                    bool b_short_startcode = payload[0] == 0 && payload[1] == 0
+                        && payload[2] == 1;
+                    int nalUnitType;
+                    // 4-byte start code
+                    if (b_long_startcode)
+                    {
+                        nalUnitType = (payload[4] & 0x1F);
+                        LOG(LOG_LEVEL_INFO, "Frame: %d: Found long start code at index %d. Type is %d", ei->frameCount, i, nalUnitType);
+                        i += 3;
+                    }
+                    // assume 3-byte start code
+                    else if (b_short_startcode)
+                    {
+                        nalUnitType = (payload[3] & 0x1F);
+                        LOG(LOG_LEVEL_INFO, "Frame: %d: Found short start code at index %d. Type is %d", ei->frameCount, i, nalUnitType);
+                    }
+                } */
+                g_memcpy(cdata, lockBitstream.bitstreamBufferPtr,
+                         lockBitstream.bitstreamSizeInBytes);
+                *cdata_bytes = lockBitstream.bitstreamSizeInBytes;
+                rv = INCREMENTAL_FRAME_ENCODED;
+            }
+            else
+            {
+                LOG(LOG_LEVEL_INFO, "error not enough room %d %d",
+                    *cdata_bytes,
+                    (int) (lockBitstream.bitstreamSizeInBytes));
+            }
+            nv_error = g_enc_funcs.nvEncUnlockBitstream(ei->enc,
+                                             lockBitstream.outputBitstream);
+            if (nv_error != NV_ENC_SUCCESS)
+            {
+                LOG(LOG_LEVEL_INFO, "unlocking failed");
+            }
         }
         else
         {
-            LOG(LOG_LEVEL_ERROR, "error not enough room %d %d",
-                *cdata_bytes,
-                (int) (lockBitstream.bitstreamSizeInBytes));
-        }
-        nv_error = g_enc_funcs.nvEncUnlockBitstream(ei->enc,
-                   lockBitstream.outputBitstream);
-        if (nv_error != NV_ENC_SUCCESS)
-        {
-            LOG(LOG_LEVEL_ERROR, "error nvEncUnlockBitstream %d",
+            LOG(LOG_LEVEL_INFO, "error nvEncLockBitstream %d",
                 nv_error);
         }
+        ++ei->frameCount;
     }
     else
     {
-        LOG(LOG_LEVEL_ERROR, "error nvEncLockBitstream %d",
-            nv_error);
+        LOG(LOG_LEVEL_INFO, "error nvEncEncodePicture %d", nv_error);
     }
-    ++ei->frameCount;
     if (rv == INCREMENTAL_FRAME_ENCODED
             && (picParams.encodePicFlags & NV_ENC_PIC_FLAG_FORCEIDR))
     {
