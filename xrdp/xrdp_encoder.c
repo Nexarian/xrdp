@@ -82,7 +82,8 @@ static void
 xrdp_enc_data_done_destructor(void *item, void *closure)
 {
     XRDP_ENC_DATA_DONE *enc_done = (XRDP_ENC_DATA_DONE *)item;
-    g_free(enc_done->comp_pad_data);
+    g_free(enc_done->comp_pad_data1);
+    g_free(enc_done->comp_pad_data2);
     g_free(enc_done);
 }
 
@@ -361,15 +362,15 @@ process_enc_jpg(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
             LOG(LOG_LEVEL_INFO, "process_enc_jpg: error 3");
             return 1;
         }
-        enc_done->comp_bytes = out_data_bytes + 2;
-        enc_done->pad_bytes = 256;
-        enc_done->comp_pad_data = out_data;
+        enc_done->comp_bytes1 = out_data_bytes + 2;
+        enc_done->pad_bytes1 = 256;
+        enc_done->comp_pad_data1 = out_data;
         enc_done->enc = enc;
         enc_done->last = index == (enc->num_crects - 1);
-        enc_done->x = x;
-        enc_done->y = y;
-        enc_done->cx = cx;
-        enc_done->cy = cy;
+        enc_done->rect.x = x;
+        enc_done->rect.y = y;
+        enc_done->rect.cx = cx;
+        enc_done->rect.cy = cy;
         /* done with msg */
         /* inform main thread done */
         tc_mutex_lock(mutex);
@@ -488,12 +489,12 @@ process_enc_rfx(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
         {
             return 1;
         }
-        enc_done->comp_bytes = tiles_written > 0 ? out_data_bytes : 0;
-        enc_done->pad_bytes = XRDP_SURCMD_PREFIX_BYTES;
-        enc_done->comp_pad_data = out_data;
+        enc_done->comp_bytes1 = tiles_written > 0 ? out_data_bytes : 0;
+        enc_done->pad_bytes1 = XRDP_SURCMD_PREFIX_BYTES;
+        enc_done->comp_pad_data1 = out_data;
         enc_done->enc = enc;
-        enc_done->cx = self->mm->wm->screen->width;
-        enc_done->cy = self->mm->wm->screen->height;
+        enc_done->rect.cx = self->mm->wm->screen->width;
+        enc_done->rect.cy = self->mm->wm->screen->height;
         if (self->gfx)
         {
             enc_done->flags = (enum xrdp_encoder_flags)
@@ -805,19 +806,19 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
         return 0;
     }
 #if XRDP_AVC444
-    enc_done->comp_bytes = 4 + comp_bytes_pre
+    enc_done->comp_bytes1 = 4 + comp_bytes_pre
                            + out_data_bytes
                            + comp_bytes_pre1
                            + out_data_bytes1;
 #else
-    enc_done->comp_bytes = comp_bytes_pre + out_data_bytes;
+    enc_done->comp_bytes1 = comp_bytes_pre + out_data_bytes;
 #endif
-    enc_done->pad_bytes = XRDP_SURCMD_PREFIX_BYTES;
-    enc_done->comp_pad_data = out_data;
+    enc_done->pad_bytes1 = XRDP_SURCMD_PREFIX_BYTES;
+    enc_done->comp_pad_data1 = out_data;
     enc_done->enc = enc;
     enc_done->last = 1;
-    enc_done->cx = scr_width;
-    enc_done->cy = scr_height;
+    enc_done->rect.cx = scr_width;
+    enc_done->rect.cy = scr_height;
     enc_done->flags = enc_done_flags;
 
 #if 0

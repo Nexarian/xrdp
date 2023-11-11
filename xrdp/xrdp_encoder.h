@@ -60,21 +60,41 @@ struct xrdp_enc_data
     int shmem_bytes;
 };
 
+struct xrdp_enc_rect
+{
+    short x;
+    short y;
+    short cx;
+    short cy;
+};
+
 typedef struct xrdp_enc_data XRDP_ENC_DATA;
 
 /* used when scheduling tasks from xrdp_encoder.c */
 struct xrdp_enc_data_done
 {
-    int comp_bytes;
-    int pad_bytes;
-    char *comp_pad_data;
-    struct xrdp_enc_data *enc;
+    /*
+        Possibility to return more than one stream from a single encode,
+        mainly due to AVC444v2 streams.
+        TODO: This is a pretty ugly hack, we should refactor this similarly
+        to how Ogon or FreeRDP do it.
+    */
+    int out_data_bytes1;
+    int comp_bytes1;
+    int pad_bytes1;
+    char *comp_pad_data1;
+
+    int out_data_bytes2;
+    int comp_bytes2;
+    int pad_bytes2;
+    char *comp_pad_data2;
+
+    int total_comp_bytes;
+
+    struct xrdp_enc_data *enc; /* incoming data */
     int last; /* true is this is last message for enc */
     int continuation; /* true if this isn't the start of a frame */
-    int x;
-    int y;
-    int cx;
-    int cy;
+    struct xrdp_enc_rect rect;
     enum xrdp_encoder_flags flags;
 };
 

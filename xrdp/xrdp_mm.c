@@ -3322,11 +3322,11 @@ xrdp_mm_process_enc_done(struct xrdp_mm *self)
         /* do something with msg */
         LOG_DEVEL(LOG_LEVEL_DEBUG, "xrdp_mm_process_enc_done: message back bytes %d",
                   enc_done->comp_bytes);
-        x = enc_done->x;
-        y = enc_done->y;
-        cx = enc_done->cx;
-        cy = enc_done->cy;
-        if (enc_done->comp_bytes > 0)
+        x = enc_done->rect.x;
+        y = enc_done->rect.y;
+        cx = enc_done->rect.cx;
+        cy = enc_done->rect.cy;
+        if (enc_done->comp_bytes1 > 0)
         {
             LOG_DEVEL(LOG_LEVEL_TRACE, "xrdp_mm_process_enc_done: x %d y %d cx %d cy %d "
                       "frame_id %d use_frame_acks %d", x, y, cx, cy,
@@ -3340,17 +3340,41 @@ xrdp_mm_process_enc_done(struct xrdp_mm *self)
                 rect.y1 = y;
                 rect.x2 = x + cx;
                 rect.y2 = y + cy;
+#if AVC444
+                xrdp_egfx_send_frame_start(self->egfx,
+                            enc_done->enc->frame_id, 0);
                 xrdp_egfx_send_wire_to_surface1(self->egfx, self->egfx->surface_id,
-#if XRDP_AVC444
-                                                XR_RDPGFX_CODECID_AVC444V2,
-#else
-                                                XR_RDPGFX_CODECID_AVC420,
-#endif
-                                                XR_PIXEL_FORMAT_XRGB_8888,
-                                                &rect,
-                                                enc_done->comp_pad_data + enc_done->pad_bytes,
-                                                enc_done->comp_bytes);
+                    XR_RDPGFX_CODECID_AVC444V2,
+                    XR_PIXEL_FORMAT_XRGB_8888,
+                    &rect,
+                    enc_done->comp_pad_data1 + enc_done->pad_bytes1,
+                    enc_done->comp_bytes1);
+                if (enc_done->comp_bytes2 > 0) {
+                    xrdp_egfx_send_frame_end(self->egfx, enc_done->enc->frame_id);
+                    ++enc_done->enc->frame_id;
+                    xrdp_egfx_send_frame_start(self->egfx,
+                            enc_done->enc->frame_id, 0);
+                    xrdp_egfx_send_wire_to_surface1(self->egfx, self->egfx->surface_id,
+                        XR_RDPGFX_CODECID_AVC444V2,
+                        XR_PIXEL_FORMAT_XRGB_8888,
+                        &rect,
+                        enc_done->comp_pad_data2 + enc_done->pad_bytes2,
+                        enc_done->comp_bytes2);
+                }
                 xrdp_egfx_send_frame_end(self->egfx, enc_done->enc->frame_id);
+#else
+                xrdp_egfx_send_frame_start(self->egfx,
+                                           enc_done->enc->frame_id, 0);
+
+                xrdp_egfx_send_wire_to_surface1(self->egfx, self->egfx->surface_id,
+                    XR_RDPGFX_CODECID_AVC420,
+                    XR_PIXEL_FORMAT_XRGB_8888,
+                    &rect,
+                    enc_done->comp_pad_data1 + enc_done->pad_bytes1,
+                    enc_done->comp_bytes1);
+
+                xrdp_egfx_send_frame_end(self->egfx, enc_done->enc->frame_id);
+#endif
             }
             else if (enc_done->flags & 2) /* gfx progressive rfx */
             {
@@ -3358,8 +3382,8 @@ xrdp_mm_process_enc_done(struct xrdp_mm *self)
                                            enc_done->enc->frame_id, 0);
                 xrdp_egfx_send_wire_to_surface2(self->egfx, self->egfx->surface_id, 9, 1,
                                                 XR_PIXEL_FORMAT_XRGB_8888,
-                                                enc_done->comp_pad_data + enc_done->pad_bytes,
-                                                enc_done->comp_bytes);
+                                                enc_done->comp_pad_data1 + enc_done->pad_bytes1,
+                                                enc_done->comp_bytes1);
                 xrdp_egfx_send_frame_end(self->egfx, enc_done->enc->frame_id);
             }
             else
@@ -3367,9 +3391,9 @@ xrdp_mm_process_enc_done(struct xrdp_mm *self)
                 libxrdp_fastpath_send_frame_marker(self->wm->session, 0,
                                                    enc_done->enc->frame_id);
                 libxrdp_fastpath_send_surface(self->wm->session,
-                                              enc_done->comp_pad_data,
-                                              enc_done->pad_bytes,
-                                              enc_done->comp_bytes,
+                                              enc_done->comp_pad_data1,
+                                              enc_done->pad_bytes1,
+                                              enc_done->comp_bytes1,
                                               x, y, x + cx, y + cy,
                                               32, self->encoder->codec_id,
                                               cx, cy);
@@ -3420,7 +3444,8 @@ xrdp_mm_process_enc_done(struct xrdp_mm *self)
             }
             g_free(enc);
         }
-        g_free(enc_done->comp_pad_data);
+        g_free(enc_done->comp_pad_data1);
+        g_free(enc_done->comp_pad_data2);
         g_free(enc_done);
     }
     return 0;
