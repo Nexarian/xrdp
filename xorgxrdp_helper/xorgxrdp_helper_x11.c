@@ -717,7 +717,7 @@ enum encoder_result
 xorgxrdp_helper_x11_encode_pixmap(int left, int top, int width, int height,
                                   int mon_id, int num_crects,
                                   struct xh_rect *crects,
-                                  void *cdata, int *cdata_bytes)
+                                  char *cdata, int *cdata_bytes)
 {
     struct mon_info *mi;
     struct shader_info *si;
@@ -737,7 +737,7 @@ xorgxrdp_helper_x11_encode_pixmap(int left, int top, int width, int height,
             width, mi->width, height, mi->height);
         return ENCODER_ERROR;
     }
-    void *enc_write_location;
+    char *enc_write_location;
 
     /* rgb to yuv */
     glEnable(GL_TEXTURE_2D);

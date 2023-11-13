@@ -41,6 +41,6 @@ enum encoder_result
 xorgxrdp_helper_x11_encode_pixmap(int left, int top, int width, int height,
                                   int mon_id, int num_crects,
                                   struct xh_rect *crects,
-                                  void *cdata, int *cdata_bytes);
+                                  char *cdata, int *cdata_bytes);
 
 #endif
