@@ -3348,22 +3348,22 @@ xrdp_mm_process_enc_done(struct xrdp_mm *self)
                 xrdp_egfx_send_frame_start(self->egfx,
                             enc_done->enc->frame_id, 0);
                 xrdp_egfx_send_wire_to_surface1(self->egfx, self->egfx->surface_id,
-                    XR_RDPGFX_CODECID_AVC444V2,
-                    XR_PIXEL_FORMAT_XRGB_8888,
-                    &rect,
-                    enc_done->comp_pad_data1 + enc_done->pad_bytes1,
-                    enc_done->comp_bytes1);
+                                                XR_RDPGFX_CODECID_AVC444V2,
+                                                XR_PIXEL_FORMAT_XRGB_8888,
+                                                &rect,
+                                                enc_done->comp_pad_data1 + enc_done->pad_bytes1,
+                                                enc_done->comp_bytes1);
                 if (enc_done->comp_bytes2 > 0) {
                     xrdp_egfx_send_frame_end(self->egfx, enc_done->enc->frame_id);
                     ++enc_done->enc->frame_id;
                     xrdp_egfx_send_frame_start(self->egfx,
-                            enc_done->enc->frame_id, 0);
+                                               enc_done->enc->frame_id, 0);
                     xrdp_egfx_send_wire_to_surface1(self->egfx, self->egfx->surface_id,
-                        XR_RDPGFX_CODECID_AVC444V2,
-                        XR_PIXEL_FORMAT_XRGB_8888,
-                        &rect,
-                        enc_done->comp_pad_data2 + enc_done->pad_bytes2,
-                        enc_done->comp_bytes2);
+                                                    XR_RDPGFX_CODECID_AVC444V2,
+                                                    XR_PIXEL_FORMAT_XRGB_8888,
+                                                    &rect,
+                                                    enc_done->comp_pad_data2 + enc_done->pad_bytes2,
+                                                    enc_done->comp_bytes2);
                 }
                 xrdp_egfx_send_frame_end(self->egfx, enc_done->enc->frame_id);
 #else
@@ -3371,11 +3371,11 @@ xrdp_mm_process_enc_done(struct xrdp_mm *self)
                                            enc_done->enc->frame_id, 0);
 
                 xrdp_egfx_send_wire_to_surface1(self->egfx, self->egfx->surface_id,
-                    XR_RDPGFX_CODECID_AVC420,
-                    XR_PIXEL_FORMAT_XRGB_8888,
-                    &rect,
-                    enc_done->comp_pad_data1 + enc_done->pad_bytes1,
-                    enc_done->comp_bytes1);
+                                                XR_RDPGFX_CODECID_AVC420,
+                                                XR_PIXEL_FORMAT_XRGB_8888,
+                                                &rect,
+                                                enc_done->comp_pad_data1 + enc_done->pad_bytes1,
+                                                enc_done->comp_bytes1);
 
                 xrdp_egfx_send_frame_end(self->egfx, enc_done->enc->frame_id);
 #endif
