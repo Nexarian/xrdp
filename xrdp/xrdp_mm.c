@@ -3320,8 +3320,12 @@ xrdp_mm_process_enc_done(struct xrdp_mm *self)
             break;
         }
         /* do something with msg */
-        LOG_DEVEL(LOG_LEVEL_DEBUG, "xrdp_mm_process_enc_done: message back bytes %d",
-                  enc_done->comp_bytes);
+        LOG_DEVEL(LOG_LEVEL_DEBUG, "xrdp_mm_process_enc_done: "
+                  "message back bytes "
+                  "(comp_bytes1: %d, "
+                  "comp_bytes2: %d)",
+                  enc_done->comp_bytes1,
+                  enc_done->comp_bytes2);
         x = enc_done->rect.x;
         y = enc_done->rect.y;
         cx = enc_done->rect.cx;

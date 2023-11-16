@@ -221,12 +221,13 @@ enum xrdp_encoder_flags
 {
     NONE                                   = 0,
     ENCODE_COMPLETE                        = 1 << 0,
-    GFX_PROGRESSIVE_RFX                    = 1 << 1,
-    CONTAINS_DUAL_FRAME_AVC444             = 1 << 2,
-    CONTAINS_SINGLE_FRAME_AVC444_YUV420    = 1 << 3,
-    CONTAINS_SINGLE_FRAME_AVC444_CHROMA420 = 1 << 4,
-    CONTAINS_KEY_FRAME                     = 1 << 5,
-    KEY_FRAME_REQUESTED                    = 1 << 6
+    CONTAINS_DUAL_FRAME_AVC444             = 1 << 1,
+    CONTAINS_SINGLE_FRAME_AVC444_YUV420    = 1 << 2,
+    CONTAINS_SINGLE_FRAME_AVC444_CHROMA420 = 1 << 3,
+    CONTAINS_KEY_FRAME                     = 1 << 4,
+    KEY_FRAME_REQUESTED                    = 1 << 5,
+    GFX_H264                               = 1 << 6,
+    GFX_PROGRESSIVE_RFX                    = 1 << 7
 };
 
 /* yyyymmdd of last incompatible change to xrdp_client_info */
