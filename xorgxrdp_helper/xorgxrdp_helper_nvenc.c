@@ -155,10 +155,10 @@ xorgxrdp_helper_nvenc_create_encoder(int width, int height, int tex,
     preset_config.presetCfg.version = NV_ENC_CONFIG_VER;
 
     nv_error = g_enc_funcs.nvEncGetEncodePresetConfigEx(
-               lei->enc, createEncodeParams.encodeGUID,
-               createEncodeParams.presetGUID,
-               createEncodeParams.tuningInfo,
-               &preset_config);
+                   lei->enc, createEncodeParams.encodeGUID,
+                   createEncodeParams.presetGUID,
+                   createEncodeParams.tuningInfo,
+                   &preset_config);
 
     LOG(LOG_LEVEL_INFO, "nvEncGetEncodePresetConfig rv %d", nv_error);
     if (nv_error != NV_ENC_SUCCESS)
@@ -420,7 +420,7 @@ xorgxrdp_helper_nvenc_encode(struct enc_info *ei, int tex,
                     (int) (lockBitstream.bitstreamSizeInBytes));
             }
             nv_error = g_enc_funcs.nvEncUnlockBitstream(ei->enc,
-                                             lockBitstream.outputBitstream);
+                       lockBitstream.outputBitstream);
             if (nv_error != NV_ENC_SUCCESS)
             {
                 LOG(LOG_LEVEL_INFO, "unlocking failed");

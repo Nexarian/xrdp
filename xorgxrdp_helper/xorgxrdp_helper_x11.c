@@ -767,7 +767,8 @@ xorgxrdp_helper_x11_encode_pixmap(int left, int top, int width, int height,
     glViewport(mi->viewport.x, mi->viewport.y, mi->viewport.w, mi->viewport.h);
     XFlush(g_display);
 
-    for (int i = 0; i < mi->num_tex_formats; ++i) {
+    for (int i = 0; i < mi->num_tex_formats; ++i)
+    {
         int index = mi->tex_format[i] % XH_NUM_SHADERS;
         si = g_si + index;
         LOG(LOG_LEVEL_TRACE, "Running shader ID: %d", index);

@@ -3346,14 +3346,15 @@ xrdp_mm_process_enc_done(struct xrdp_mm *self)
                 rect.y2 = y + cy;
 #if AVC444
                 xrdp_egfx_send_frame_start(self->egfx,
-                            enc_done->enc->frame_id, 0);
+                                           enc_done->enc->frame_id, 0);
                 xrdp_egfx_send_wire_to_surface1(self->egfx, self->egfx->surface_id,
                                                 XR_RDPGFX_CODECID_AVC444V2,
                                                 XR_PIXEL_FORMAT_XRGB_8888,
                                                 &rect,
                                                 enc_done->comp_pad_data1 + enc_done->pad_bytes1,
                                                 enc_done->comp_bytes1);
-                if (enc_done->comp_bytes2 > 0) {
+                if (enc_done->comp_bytes2 > 0)
+                {
                     xrdp_egfx_send_frame_end(self->egfx, enc_done->enc->frame_id);
                     ++enc_done->enc->frame_id;
                     xrdp_egfx_send_frame_start(self->egfx,

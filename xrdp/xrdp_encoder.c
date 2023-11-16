@@ -807,9 +807,9 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     }
 #if XRDP_AVC444
     enc_done->comp_bytes1 = 4 + comp_bytes_pre
-                           + out_data_bytes
-                           + comp_bytes_pre1
-                           + out_data_bytes1;
+                            + out_data_bytes
+                            + comp_bytes_pre1
+                            + out_data_bytes1;
 #else
     enc_done->comp_bytes1 = comp_bytes_pre + out_data_bytes;
 #endif
