@@ -645,14 +645,15 @@ xorgxrdp_helper_x11_create_pixmap(int width, int height, int magic,
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     if (g_enc == ENC_NVENC)
     {
-        LOG(LOG_LEVEL_INFO, "using XH_YUV420");
-#if AVC444
+#if XRDP_AVC444
         mi->tex_format[0] = XH_YUV444_V2_MV;
         mi->tex_format[1] = XH_YUV444_V2_AUX;
         mi->num_tex_formats = 2;
+        LOG(LOG_LEVEL_INFO, "using XH_YUV444_V2_MV and XH_YUV444_V2_AUX");
 #else
         mi->tex_format[0] = XH_YUV420;
         mi->num_tex_formats = 1;
+        LOG(LOG_LEVEL_INFO, "using XH_YUV420");
 #endif
         glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height * 3 / 2, 0,
                      GL_RED, GL_UNSIGNED_BYTE, NULL);

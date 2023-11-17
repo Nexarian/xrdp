@@ -3344,7 +3344,7 @@ xrdp_mm_process_enc_done(struct xrdp_mm *self)
                 rect.y1 = y;
                 rect.x2 = x + cx;
                 rect.y2 = y + cy;
-#if AVC444
+#if XRDP_AVC444
                 xrdp_egfx_send_frame_start(self->egfx,
                                            enc_done->enc->frame_id, 0);
                 xrdp_egfx_send_wire_to_surface1(self->egfx, self->egfx->surface_id,
