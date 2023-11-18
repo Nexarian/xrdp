@@ -613,9 +613,14 @@ build_rfx_avc420_metablock(struct stream *s, short *rrects, int rcount,
     return comp_bytes_pre;
 }
 
-static int
+static XRDP_ENC_DATA_DONE *
 build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
 {
+    if (!self->gfx)
+    {
+        return 0;
+    }
+
     int index;
     int x;
     int y;
@@ -850,7 +855,8 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     return enc_done;
 }
 
-struct xrdp_enc_rect calculateBoundingBox(short *boxes, int numBoxes)
+struct xrdp_enc_rect
+calculateBoundingBox(short *boxes, int numBoxes)
 {
     struct xrdp_enc_rect boundingBox;
     boundingBox.x = INT16_MAX;
@@ -880,7 +886,7 @@ struct xrdp_enc_rect calculateBoundingBox(short *boxes, int numBoxes)
 static int
 process_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
 {
-    FIFO *fifo_processed;
+    struct fifo *fifo_processed;
     tbus mutex;
     tbus event_processed;
 
@@ -912,10 +918,6 @@ process_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     g_set_wait_obj(event_processed);
 
     return 0;
-
-
-
-    return build_enc_h264(self, enc);
 }
 
 #else
