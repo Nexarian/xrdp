@@ -645,7 +645,7 @@ xorgxrdp_helper_x11_create_pixmap(int width, int height, int magic,
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     if (g_enc == ENC_NVENC)
     {
-#if XRDP_AVC444
+#if defined(XRDP_AVC444)
         mi->tex_format[0] = XH_YUV444_V2_MV;
         mi->tex_format[1] = XH_YUV444_V2_AUX;
         mi->num_tex_formats = 2;

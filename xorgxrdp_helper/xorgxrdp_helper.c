@@ -164,7 +164,7 @@ xorg_process_message_64(struct xorgxrdp_info *xi, struct trans *trans, struct st
                     bmpdata[1] = cdata_bytes >> 8;
                     bmpdata[2] = cdata_bytes >> 16;
                     bmpdata[3] = cdata_bytes >> 24;
-                    LOG(LOG_LEVEL_INFO, "cdata_bytes %d", cdata_bytes);
+                    LOG(LOG_LEVEL_DEBUG, "cdata_bytes %d", cdata_bytes);
                 }
             }
         }
@@ -304,7 +304,7 @@ xorg_process_message_61(struct xorgxrdp_info *xi, struct stream *s)
         bmpdata[1] = cdata_bytes >> 8;
         bmpdata[2] = cdata_bytes >> 16;
         bmpdata[3] = cdata_bytes >> 24;
-        LOG_DEVEL(LOG_LEVEL_INFO, "cdata_bytes %d", cdata_bytes);
+        LOG_DEVEL(LOG_LEVEL_DEBUG, "cdata_bytes %d", cdata_bytes);
     }
     g_free(crects);
     return 0;

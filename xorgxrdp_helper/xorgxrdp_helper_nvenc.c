@@ -278,7 +278,9 @@ xorgxrdp_helper_nvenc_create_encoder(int width, int height, int tex,
     reg_res.resourceType = NV_ENC_INPUT_RESOURCE_TYPE_OPENGL_TEX;
     reg_res.width = width;
     reg_res.height = height;
-    if (tex_format == XH_YUV420)
+    if (tex_format == XH_YUV420
+        || tex_format == XH_YUV444_V2_MV
+        || tex_format == XH_YUV444_V2_AUX)
     {
         reg_res.pitch = width;
         reg_res.bufferFormat = NV_ENC_BUFFER_FORMAT_NV12;

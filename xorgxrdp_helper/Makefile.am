@@ -21,6 +21,10 @@ XRDP_EXTRA_LIBS += $(XRDP_YAMI_LIBS)
 XRDP_EXTRA_SOURCES += xorgxrdp_helper_yami.c xorgxrdp_helper_yami.h encoder_headers/yami_inf.h
 endif
 
+if XRDP_AVC444
+AM_CPPFLAGS += -DXRDP_AVC444
+endif
+
 bin_PROGRAMS = \
   xorgxrdp_helper
 
