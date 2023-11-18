@@ -784,8 +784,8 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
         error = xrdp_encoder_x264_encode(self->codec_handle, 0,
                                          enc->width, enc->height, 0,
                                          enc->data
-                                             + (enc->height * enc->width)
-                                             * 3 / 2,
+                                         + (enc->height * enc->width)
+                                         * 3 / 2,
                                          s->p, &out_data_bytes1);
 
     }
@@ -850,7 +850,7 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     return enc_done;
 }
 
-struct xrdp_enc_rect calculateBoundingBox(short* boxes, int numBoxes)
+struct xrdp_enc_rect calculateBoundingBox(short *boxes, int numBoxes)
 {
     struct xrdp_enc_rect boundingBox;
     boundingBox.x = INT16_MAX;
@@ -890,14 +890,15 @@ process_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
 
     XRDP_ENC_DATA_DONE *enc_done;
     int mode = 0;
-    switch (mode) {
+    switch (mode)
+    {
         case 0:
             enc_done = build_enc_h264(self, enc);
             break;
-        // case 1:
-        //     enc_done = build_enc_h264_avc444_yuv420_stream(self, enc);
-        //     enc_done = build_enc_h264_avc444_chroma420_stream(self, enc, enc_done);
-        //     break;
+            // case 1:
+            //     enc_done = build_enc_h264_avc444_yuv420_stream(self, enc);
+            //     enc_done = build_enc_h264_avc444_chroma420_stream(self, enc, enc_done);
+            //     break;
     }
 
     enc_done->rect = calculateBoundingBox(enc->drects, enc->num_drects);
