@@ -621,39 +621,30 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     int y;
     int cx;
     int cy;
-    int out_data_bytes;
-#if XRDP_AVC444
-    int out_data_bytes1;
-#endif
     int rcount;
     short *rrects;
     int error;
     char *out_data;
     int out_data_alloc_size;
     XRDP_ENC_DATA_DONE *enc_done;
-    struct fifo *fifo_processed;
-    tbus mutex;
-    tbus event_processed;
     struct stream ls;
     struct stream *s;
-    int comp_bytes_pre;
-#if XRDP_AVC444
-    int comp_bytes_pre1;
-#endif
     int enc_done_flags;
     int scr_width;
     int scr_height;
+    int out_data_bytes;
+    int comp_bytes_pre;
+#if XRDP_AVC444
+    int out_data_bytes1;
+    int comp_bytes_pre1;
+#endif
 
-    LOG(LOG_LEVEL_DEBUG, "process_enc_x264:");
-    LOG(LOG_LEVEL_DEBUG, "process_enc_x264: num_crects %d num_drects %d",
+    LOG(LOG_LEVEL_DEBUG, "build_enc_h264:");
+    LOG(LOG_LEVEL_DEBUG, "build_enc_h264: num_crects %d num_drects %d",
         enc->num_crects, enc->num_drects);
 
     scr_width = self->mm->wm->screen->width;
     scr_height = self->mm->wm->screen->height;
-
-    fifo_processed = self->fifo_processed;
-    mutex = self->mutex;
-    event_processed = self->xrdp_encoder_event_processed;
 
     rcount = enc->num_drects;
     rrects = enc->drects;
@@ -761,15 +752,44 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
 
     s->p += out_data_bytes;
 
+    uint8_t LC = 0b00;
+    uint32_t bitstream =
+        ((uint32_t)(comp_bytes_pre + out_data_bytes) & 0x3FFFFFFFUL)
+        | ((LC & 0x03UL) << 30UL);
+
     /* chroma 444 */
     /* RFX_AVC420_METABLOCK */
     comp_bytes_pre1 = build_rfx_avc420_metablock(s, rrects, rcount,
                       scr_width, scr_height);
     out_data_bytes1 = OUT_DATA_BYTES_DEFAULT_SIZE;
-    error = xrdp_encoder_x264_encode(self->codec_handle, 0,
-                                     enc->width, enc->height, 0,
-                                     enc->data,
-                                     s->p, &out_data_bytes1);
+    if (enc->flags & 1)
+    {
+        /* already compressed */
+        uint8_t *ud = (uint8_t *) (enc->data);
+        int cbytes = ud[0] | (ud[1] << 8) | (ud[2] << 16) | (ud[3] << 24);
+        if ((cbytes < 1) || (cbytes > out_data_bytes))
+        {
+            LOG(LOG_LEVEL_INFO, "process_enc_h264: bad h264 bytes %d", cbytes);
+            g_free(out_data);
+            return 0;
+        }
+        LOG(LOG_LEVEL_DEBUG,
+            "process_enc_h264: already compressed and size is %d", cbytes);
+        out_data_bytes = cbytes;
+        g_memcpy(s->p, enc->data + 4, out_data_bytes);
+    }
+#if defined(XRDP_X264)
+    else
+    {
+        error = xrdp_encoder_x264_encode(self->codec_handle, 0,
+                                         enc->width, enc->height, 0,
+                                         enc->data
+                                             + (enc->height * enc->width)
+                                             * 3 / 2,
+                                         s->p, &out_data_bytes1);
+
+    }
+#endif
     if (error != 0)
     {
         LOG_DEVEL(LOG_LEVEL_TRACE,
@@ -827,6 +847,61 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     g_hexdump(enc_done->comp_pad_data + enc_done->pad_bytes, enc_done->comp_bytes);
 #endif
 
+    return enc_done;
+}
+
+struct xrdp_enc_rect calculateBoundingBox(short* boxes, int numBoxes)
+{
+    struct xrdp_enc_rect boundingBox;
+    boundingBox.x = INT16_MAX;
+    boundingBox.y = INT16_MAX;
+    boundingBox.cx = INT16_MIN;
+    boundingBox.cy = INT16_MIN;
+
+    for (int i = 0; i < numBoxes; ++i)
+    {
+        int location = i * 4;
+        short x = boxes[location + 0];
+        short y = boxes[location + 1];
+        short cx = boxes[location + 2];
+        short cy = boxes[location + 3];
+
+        boundingBox.x = MIN(boundingBox.x, x);
+        boundingBox.y = MIN(boundingBox.y, y);
+        boundingBox.cx = MAX(boundingBox.cx, cx);
+        boundingBox.cy = MAX(boundingBox.cy, cy);
+    }
+
+    return boundingBox;
+}
+
+/*****************************************************************************/
+/* called from encoder thread */
+static int
+process_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
+{
+    FIFO *fifo_processed;
+    tbus mutex;
+    tbus event_processed;
+
+    fifo_processed = self->fifo_processed;
+    mutex = self->mutex;
+    event_processed = self->xrdp_encoder_event_processed;
+
+    XRDP_ENC_DATA_DONE *enc_done;
+    int mode = 0;
+    switch (mode) {
+        case 0:
+            enc_done = build_enc_h264(self, enc);
+            break;
+        // case 1:
+        //     enc_done = build_enc_h264_avc444_yuv420_stream(self, enc);
+        //     enc_done = build_enc_h264_avc444_chroma420_stream(self, enc, enc_done);
+        //     break;
+    }
+
+    enc_done->rect = calculateBoundingBox(enc->drects, enc->num_drects);
+
     /* done with msg */
     /* inform main thread done */
     tc_mutex_lock(mutex);
@@ -836,13 +911,9 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     g_set_wait_obj(event_processed);
 
     return 0;
-}
 
-/*****************************************************************************/
-/* called from encoder thread */
-static int
-process_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
-{
+
+
     return build_enc_h264(self, enc);
 }
 
