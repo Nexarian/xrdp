@@ -64,7 +64,6 @@ xorg_process_message_64(struct xorgxrdp_info *xi, struct trans *trans, struct st
     int top;
     int width;
     int height;
-    int cdata_bytes;
     int index;
     int recv_bytes;
     enum encoder_result rv;
@@ -143,12 +142,14 @@ xorg_process_message_64(struct xorgxrdp_info *xi, struct trans *trans, struct st
 
                 if ((bmpdata != NULL) && (flags & 1))
                 {
-                    cdata_bytes = 16 * 1024 * 1024;
+                    int cdata_bytes[2];
+                    cdata_bytes[0] = 128 * 1024 * 1024;
+                    cdata_bytes[1] = cdata_bytes[0];
                     rv = xorgxrdp_helper_x11_encode_pixmap(left, top,
                                                            width, height, 0,
                                                            num_crects, crects,
                                                            bmpdata + 4,
-                                                           &cdata_bytes);
+                                                           cdata_bytes);
                     if (rv == ENCODER_ERROR)
                     {
                         LOG(LOG_LEVEL_ERROR, "error %d", rv);
@@ -160,11 +161,19 @@ xorg_process_message_64(struct xorgxrdp_info *xi, struct trans *trans, struct st
                         s->p = final_pointer;
                     }
 
-                    bmpdata[0] = cdata_bytes;
-                    bmpdata[1] = cdata_bytes >> 8;
-                    bmpdata[2] = cdata_bytes >> 16;
-                    bmpdata[3] = cdata_bytes >> 24;
-                    LOG(LOG_LEVEL_DEBUG, "cdata_bytes %d", cdata_bytes);
+                    for (int i = 0; i < 2; ++i)
+                    {
+                        int cdata_value = cdata_bytes[i];
+                        char *bmpdata_location = i == 0
+                            ? bmpdata
+                            : bmpdata + cdata_bytes[i - 1] + (4 * i);
+                        bmpdata_location[0] = cdata_value;
+                        bmpdata_location[1] = cdata_value >> 8;
+                        bmpdata_location[2] = cdata_value >> 16;
+                        bmpdata_location[3] = cdata_value >> 24;
+                        LOG_DEVEL(LOG_LEVEL_INFO,
+                                  "cdata_bytes %d", cdata_value);
+                    }
                 }
             }
         }
@@ -200,7 +209,6 @@ xorg_process_message_61(struct xorgxrdp_info *xi, struct stream *s)
     int frame_id;
     int width;
     int height;
-    int cdata_bytes;
     int index;
     enum encoder_result rv;
     struct xh_rect *crects;
@@ -285,10 +293,12 @@ xorg_process_message_61(struct xorgxrdp_info *xi, struct stream *s)
     }
     if ((bmpdata != NULL) && (flags & 1))
     {
-        cdata_bytes = 16 * 1024 * 1024;
+        int cdata_bytes[2];
+        cdata_bytes[0] = 128 * 1024 * 1024;
+        cdata_bytes[1] = cdata_bytes[0];
         rv = xorgxrdp_helper_x11_encode_pixmap(0, 0, width, height, 0,
                                                num_crects, crects,
-                                               bmpdata + 4, &cdata_bytes);
+                                               bmpdata, cdata_bytes);
         if (rv == ENCODER_ERROR)
         {
             LOG(LOG_LEVEL_ERROR, "error %d", rv);
@@ -300,11 +310,18 @@ xorg_process_message_61(struct xorgxrdp_info *xi, struct stream *s)
             s->p = final_pointer;
         }
 
-        bmpdata[0] = cdata_bytes;
-        bmpdata[1] = cdata_bytes >> 8;
-        bmpdata[2] = cdata_bytes >> 16;
-        bmpdata[3] = cdata_bytes >> 24;
-        LOG_DEVEL(LOG_LEVEL_DEBUG, "cdata_bytes %d", cdata_bytes);
+        for (int i = 0; i < 2; ++i)
+        {
+            int cdata_value = cdata_bytes[i];
+            char *bmpdata_location = i == 0
+                ? bmpdata
+                : bmpdata + cdata_bytes[i - 1] + (4 * i);
+            bmpdata_location[0] = cdata_value;
+            bmpdata_location[1] = cdata_value >> 8;
+            bmpdata_location[2] = cdata_value >> 16;
+            bmpdata_location[3] = cdata_value >> 24;
+            LOG_DEVEL(LOG_LEVEL_INFO, "cdata_bytes %d", cdata_value);
+        }
     }
     g_free(crects);
     return 0;
