@@ -28,6 +28,6 @@ int
 xorgxrdp_helper_nvenc_delete_encoder(struct enc_info *ei);
 enum encoder_result
 xorgxrdp_helper_nvenc_encode(struct enc_info *ei, int tex,
-                             void *cdata, int *cdata_bytes);
+                             char *cdata, int *cdata_bytes);
 
 #endif

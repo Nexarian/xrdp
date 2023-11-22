@@ -142,7 +142,7 @@ xorgxrdp_helper_nvenc_create_encoder(int width, int height, int tex,
     g_memset(&createEncodeParams, 0, sizeof(createEncodeParams));
     createEncodeParams.version = NV_ENC_INITIALIZE_PARAMS_VER;
     createEncodeParams.encodeGUID = NV_ENC_CODEC_H264_GUID;
-    createEncodeParams.presetGUID = NV_ENC_PRESET_P7_GUID;
+    createEncodeParams.presetGUID = NV_ENC_PRESET_P4_GUID;
     createEncodeParams.tuningInfo = NV_ENC_TUNING_INFO_LOW_LATENCY;
     createEncodeParams.encodeWidth = width;
     createEncodeParams.encodeHeight = height;
@@ -171,8 +171,8 @@ xorgxrdp_helper_nvenc_create_encoder(int width, int height, int tex,
     encCfg.version = NV_ENC_CONFIG_VER;
     memcpy(&encCfg, &preset_config.presetCfg, sizeof(NV_ENC_CONFIG));
     encCfg.profileGUID = NV_ENC_H264_PROFILE_MAIN_GUID;
-    //encCfg.gopLength = NVENC_INFINITE_GOPLENGTH;
-    encCfg.gopLength = 10;
+    encCfg.gopLength = NVENC_INFINITE_GOPLENGTH;
+    //encCfg.gopLength = 10;
     encCfg.frameIntervalP = 1;  /* 1 + B_Frame_Count */
     encCfg.frameFieldMode = NV_ENC_PARAMS_FRAME_FIELD_MODE_FRAME;
     encCfg.mvPrecision = NV_ENC_MV_PRECISION_QUARTER_PEL;
@@ -239,24 +239,24 @@ xorgxrdp_helper_nvenc_create_encoder(int width, int height, int tex,
     }
     encCfg.rcParams.cbQPIndexOffset = -1;
     encCfg.encodeCodecConfig.h264Config.chromaFormatIDC = 1;
-    encCfg.encodeCodecConfig.h264Config.idrPeriod = 2;
+    //encCfg.encodeCodecConfig.h264Config.idrPeriod = 2;
     encCfg.encodeCodecConfig.h264Config.repeatSPSPPS = 1;
     encCfg.encodeCodecConfig.h264Config.disableSPSPPS = 0;
     //encCfg.encodeCodecConfig.h264Config.maxNumRefFrames = 1;
-    encCfg.encodeCodecConfig.h264Config.sliceMode = 0;
-    encCfg.encodeCodecConfig.h264Config.sliceModeData = 0;
-    encCfg.encodeCodecConfig.h264Config.outputAUD = 1;
-    encCfg.encodeCodecConfig.h264Config.outputBufferingPeriodSEI = 1;
-    encCfg.encodeCodecConfig.h264Config.outputPictureTimingSEI = 1;
-    encCfg.encodeCodecConfig.h264Config.level = NV_ENC_LEVEL_AUTOSELECT;
-    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoFullRangeFlag = 1;
-    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoSignalTypePresentFlag = 1;
-    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoFormat = NV_ENC_VUI_VIDEO_FORMAT_UNSPECIFIED;
-    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.bitstreamRestrictionFlag = 1;
-    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourDescriptionPresentFlag = 1;
-    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
-    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_BT709;
-    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT709;
+    // encCfg.encodeCodecConfig.h264Config.sliceMode = 0;
+    // encCfg.encodeCodecConfig.h264Config.sliceModeData = 0;
+    encCfg.encodeCodecConfig.h264Config.outputAUD = 0;
+    // encCfg.encodeCodecConfig.h264Config.outputBufferingPeriodSEI = 1;
+    // encCfg.encodeCodecConfig.h264Config.outputPictureTimingSEI = 1;
+    // encCfg.encodeCodecConfig.h264Config.level = NV_ENC_LEVEL_AUTOSELECT;
+    // encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoFullRangeFlag = 1;
+    // encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoSignalTypePresentFlag = 1;
+    // encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoFormat = NV_ENC_VUI_VIDEO_FORMAT_UNSPECIFIED;
+    // encCfg.encodeCodecConfig.h264Config.h264VUIParameters.bitstreamRestrictionFlag = 1;
+    // encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourDescriptionPresentFlag = 1;
+    // encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
+    // encCfg.encodeCodecConfig.h264Config.h264VUIParameters.transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_BT709;
+    // encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT709;
 
     createEncodeParams.encodeConfig = &encCfg;
 
@@ -346,7 +346,7 @@ xorgxrdp_helper_nvenc_delete_encoder(struct enc_info *ei)
 /*****************************************************************************/
 enum encoder_result
 xorgxrdp_helper_nvenc_encode(struct enc_info *ei, int tex,
-                             void *cdata, int *cdata_bytes)
+                             char *cdata, int *cdata_bytes)
 {
     NV_ENC_PIC_PARAMS picParams;
     NV_ENC_LOCK_BITSTREAM lockBitstream;

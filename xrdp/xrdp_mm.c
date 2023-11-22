@@ -3320,7 +3320,7 @@ xrdp_mm_process_enc_done(struct xrdp_mm *self)
             break;
         }
         /* do something with msg */
-        LOG_DEVEL(LOG_LEVEL_DEBUG, "xrdp_mm_process_enc_done: "
+        LOG(LOG_LEVEL_INFO, "xrdp_mm_process_enc_done: "
                   "message back bytes "
                   "(comp_bytes1: %d, "
                   "comp_bytes2: %d)",
@@ -3338,8 +3338,6 @@ xrdp_mm_process_enc_done(struct xrdp_mm *self)
                       self->wm->client_info->use_frame_acks);
             if (enc_done->flags & 1) /* gfx h264 */
             {
-                xrdp_egfx_send_frame_start(self->egfx,
-                                           enc_done->enc->frame_id, 0);
                 rect.x1 = x;
                 rect.y1 = y;
                 rect.x2 = x + cx;

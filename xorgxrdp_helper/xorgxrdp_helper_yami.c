@@ -184,7 +184,7 @@ static const EGLint g_create_image_attr[] =
 /*****************************************************************************/
 enum encoder_result
 xorgxrdp_helper_yami_encode(struct enc_info *ei, int tex,
-                            void *cdata, int *cdata_bytes)
+                            char *cdata, int *cdata_bytes)
 {
     EGLClientBuffer cb;
     EGLImageKHR image;

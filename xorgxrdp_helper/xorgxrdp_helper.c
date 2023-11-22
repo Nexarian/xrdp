@@ -139,16 +139,16 @@ xorg_process_message_64(struct xorgxrdp_info *xi, struct trans *trans, struct st
             {
                 bmpdata = (char *)shmem_ptr;
                 bmpdata += shmem_offset;
-
                 if ((bmpdata != NULL) && (flags & 1))
                 {
                     int cdata_bytes[2];
                     cdata_bytes[0] = 128 * 1024 * 1024;
                     cdata_bytes[1] = cdata_bytes[0];
+                    char *bmpdata_base_location = bmpdata + 4;
                     rv = xorgxrdp_helper_x11_encode_pixmap(left, top,
                                                            width, height, 0,
                                                            num_crects, crects,
-                                                           bmpdata + 4,
+                                                           bmpdata_base_location,
                                                            cdata_bytes);
                     if (rv == ENCODER_ERROR)
                     {
@@ -171,7 +171,7 @@ xorg_process_message_64(struct xorgxrdp_info *xi, struct trans *trans, struct st
                         bmpdata_location[1] = cdata_value >> 8;
                         bmpdata_location[2] = cdata_value >> 16;
                         bmpdata_location[3] = cdata_value >> 24;
-                        LOG_DEVEL(LOG_LEVEL_INFO,
+                        LOG(LOG_LEVEL_INFO,
                                   "cdata_bytes %d", cdata_value);
                     }
                 }

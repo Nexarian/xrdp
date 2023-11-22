@@ -72,7 +72,7 @@ struct enc_funcs
                       struct enc_info **ei);
     int (*destroy_enc)(struct enc_info *ei);
     enum encoder_result (*encode)(struct enc_info *ei, int tex,
-                                  void *cdata, int *cdata_bytes);
+                                  char *cdata, int *cdata_bytes);
 };
 
 static struct enc_funcs g_enc_funcs[] =

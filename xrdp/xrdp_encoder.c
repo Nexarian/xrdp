@@ -524,7 +524,7 @@ process_enc_rfx(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
 }
 #endif
 
-#define SAVE_VIDEO 0
+#define SAVE_VIDEO 1
 
 #if SAVE_VIDEO
 #include <sys/types.h>
@@ -543,7 +543,7 @@ static int n_save_data(const char *data, int data_size, int width, int height)
         int bytes_follow;
     } header;
 
-    fd = open("video.bin", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+    fd = open("~/video.bin", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
     lseek(fd, 0, SEEK_END);
     header.tag[0] = 'B';
     header.tag[1] = 'E';
@@ -770,7 +770,8 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     if (enc->flags & 1)
     {
         /* already compressed */
-        uint8_t *ud = (uint8_t *) (enc->data);
+        //uint8_t *ud = (uint8_t *) (enc->data);
+        uint8_t *ud = (uint8_t *) (enc->data + enc_done->out_data_bytes + 4);
         int cbytes = ud[0] | (ud[1] << 8) | (ud[2] << 16) | (ud[3] << 24);
         if ((cbytes < 1) || (cbytes > out_data_bytes))
         {
@@ -780,8 +781,9 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
         }
         LOG(LOG_LEVEL_DEBUG,
             "process_enc_h264: already compressed and size is %d", cbytes);
-        out_data_bytes = cbytes;
-        g_memcpy(s->p, enc->data + 4, out_data_bytes);
+        out_data_bytes1 = cbytes;
+        g_memcpy(s->p, enc->data + out_data_bytes + 8, out_data_bytes1);
+        //g_memcpy(s->p, enc->data + 4, out_data_bytes);
     }
 #if defined(XRDP_X264)
     else
@@ -806,7 +808,7 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     s->p += out_data_bytes1;
     s_push_layer(s, sec_hdr, 0);
     s_pop_layer(s, mcs_hdr);
-    out_uint32_le(s, comp_bytes_pre + out_data_bytes);
+    out_uint32_le(s, bitstream);
     s_pop_layer(s, sec_hdr);
 
     s->end = s->p;
