@@ -243,8 +243,8 @@ xorgxrdp_helper_nvenc_create_encoder(int width, int height, int tex,
     encCfg.encodeCodecConfig.h264Config.repeatSPSPPS = 1;
     encCfg.encodeCodecConfig.h264Config.disableSPSPPS = 0;
     //encCfg.encodeCodecConfig.h264Config.maxNumRefFrames = 1;
-    // encCfg.encodeCodecConfig.h264Config.sliceMode = 0;
-    // encCfg.encodeCodecConfig.h264Config.sliceModeData = 0;
+    encCfg.encodeCodecConfig.h264Config.sliceMode = 0;
+    encCfg.encodeCodecConfig.h264Config.sliceModeData = 0;
     encCfg.encodeCodecConfig.h264Config.outputAUD = 0;
     // encCfg.encodeCodecConfig.h264Config.outputBufferingPeriodSEI = 1;
     // encCfg.encodeCodecConfig.h264Config.outputPictureTimingSEI = 1;

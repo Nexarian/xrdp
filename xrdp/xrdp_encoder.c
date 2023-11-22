@@ -752,9 +752,10 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
         g_free(out_data);
         return 0;
     }
-
 #if XRDP_AVC444
-
+#if SAVE_VIDEO
+    n_save_data(s->p, out_data_bytes, enc->width, enc->height);
+#endif
     s->p += out_data_bytes;
 
     uint8_t LC = 0b00;
@@ -773,7 +774,7 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
         //uint8_t *ud = (uint8_t *) (enc->data);
         uint8_t *ud = (uint8_t *) (enc->data + enc_done->out_data_bytes + 4);
         int cbytes = ud[0] | (ud[1] << 8) | (ud[2] << 16) | (ud[3] << 24);
-        if ((cbytes < 1) || (cbytes > out_data_bytes))
+        if ((cbytes < 1) || (cbytes > out_data_bytes1))
         {
             LOG(LOG_LEVEL_INFO, "process_enc_h264: bad h264 bytes %d", cbytes);
             g_free(out_data);
@@ -783,7 +784,6 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
             "process_enc_h264: already compressed and size is %d", cbytes);
         out_data_bytes1 = cbytes;
         g_memcpy(s->p, enc->data + out_data_bytes + 8, out_data_bytes1);
-        //g_memcpy(s->p, enc->data + 4, out_data_bytes);
     }
 #if defined(XRDP_X264)
     else
@@ -805,6 +805,9 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
         g_free(out_data);
         return 0;
     }
+#if SAVE_VIDEO
+    n_save_data(s->p, out_data_bytes1, enc->width, enc->height);
+#endif
     s->p += out_data_bytes1;
     s_push_layer(s, sec_hdr, 0);
     s_pop_layer(s, mcs_hdr);
@@ -813,6 +816,9 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
 
     s->end = s->p;
 #else
+#if SAVE_VIDEO
+    n_save_data(s->p, out_data_bytes, enc->width, enc->height);
+#endif
     s->end = s->p + out_data_bytes;
 #endif
 
@@ -822,10 +828,6 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
         s_pop_layer(s, iso_hdr);
         out_uint32_le(s, out_data_bytes);
     }
-
-#if SAVE_VIDEO
-    n_save_data(s->p, out_data_bytes, enc->width, enc->height);
-#endif
 
     enc_done = g_new0(XRDP_ENC_DATA_DONE, 1);
     if (enc_done == NULL)

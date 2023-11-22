@@ -161,7 +161,7 @@ xorg_process_message_64(struct xorgxrdp_info *xi, struct trans *trans, struct st
                         s->p = final_pointer;
                     }
 
-                    for (int i = 0; i < 2; ++i)
+                    for (int i = 0; i < 1; ++i)
                     {
                         int cdata_value = cdata_bytes[i];
                         char *bmpdata_location = i == 0
