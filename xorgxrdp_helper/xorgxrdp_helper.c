@@ -52,7 +52,8 @@ int xrdp_invalidate = 0;
 
 /*****************************************************************************/
 static int
-xorg_process_message_64(struct xorgxrdp_info *xi, struct trans *trans, struct stream *s, int *fd)
+xorg_process_message_64(struct xorgxrdp_info *xi, struct trans *trans,
+                        struct stream *s, int *fd)
 {
     int num_drects;
     int num_crects;
@@ -72,6 +73,11 @@ xorg_process_message_64(struct xorgxrdp_info *xi, struct trans *trans, struct st
     char msg[4];
     unsigned int num_fds;
     void *shmem_ptr = NULL;
+#ifdef XRDP_AVC444
+    const int num_encoded_frames = 2;
+#else
+    const int num_encoded_frames = 1;
+#endif
 
     /* dirty pixels */
     in_uint16_le(s, num_drects);
@@ -103,12 +109,15 @@ xorg_process_message_64(struct xorgxrdp_info *xi, struct trans *trans, struct st
         if (xrdp_invalidate > 0 && frame_id == 1)
         {
             // Let it through. We are no longer resizing.
-            LOG(LOG_LEVEL_DEBUG, "Invalidate received and processing frame ID 1. Unblocking encoder. Invalidate is %d.", xrdp_invalidate);
+            LOG(LOG_LEVEL_DEBUG, "Invalidate received and processing "
+                                 "frame ID 1. Unblocking encoder. "
+                                 "Invalidate is %d.", xrdp_invalidate);
             xi->resizing = 0;
         }
         else
         {
-            LOG(LOG_LEVEL_DEBUG, "Blocked Incoming Frame ID %d. Invalidate is %d", frame_id, xrdp_invalidate);
+            LOG(LOG_LEVEL_DEBUG, "Blocked Incoming Frame ID %d. "
+                                 "Invalidate is %d", frame_id, xrdp_invalidate);
             return 0;
         }
     }
@@ -130,7 +139,7 @@ xorg_process_message_64(struct xorgxrdp_info *xi, struct trans *trans, struct st
         "g_sck_recv_fd_set rv %d fd %d, num_fds %d",
         recv_bytes, *fd, num_fds);
 
-    bmpdata = NULL;
+    shmem_ptr = NULL;
     if (recv_bytes == 4)
     {
         if (num_fds == 1)
@@ -141,14 +150,19 @@ xorg_process_message_64(struct xorgxrdp_info *xi, struct trans *trans, struct st
                 bmpdata += shmem_offset;
                 if ((bmpdata != NULL) && (flags & 1))
                 {
-                    int cdata_bytes[2];
-                    cdata_bytes[0] = 128 * 1024 * 1024;
-                    cdata_bytes[1] = cdata_bytes[0];
-                    char *bmpdata_base_location = bmpdata + 4;
+                    int cdata_bytes[num_encoded_frames];
+                    for (int i = 0; i < num_encoded_frames; ++i)
+                    {
+                        cdata_bytes[i] = 128 * 1024 * 1024;
+                    }
+                    /*
+                    Not using a 4 byte offset here,
+                    this is handled in encode_pixmap.
+                    */
                     rv = xorgxrdp_helper_x11_encode_pixmap(left, top,
                                                            width, height, 0,
                                                            num_crects, crects,
-                                                           bmpdata_base_location,
+                                                           bmpdata,
                                                            cdata_bytes);
                     if (rv == ENCODER_ERROR)
                     {
@@ -157,11 +171,11 @@ xorg_process_message_64(struct xorgxrdp_info *xi, struct trans *trans, struct st
                     if (rv == KEY_FRAME_ENCODED)
                     {
                         s->p = flag_pointer;
-                        out_uint32_le(s, 1 | 2);
+                        out_uint32_le(s, flags | 1 | 2);
                         s->p = final_pointer;
                     }
 
-                    for (int i = 0; i < 1; ++i)
+                    for (int i = 0; i < num_encoded_frames; ++i)
                     {
                         int cdata_value = cdata_bytes[i];
                         char *bmpdata_location = i == 0
@@ -242,12 +256,15 @@ xorg_process_message_61(struct xorgxrdp_info *xi, struct stream *s)
         if (xrdp_invalidate > 0 && frame_id == 1)
         {
             // Let it through. We are no longer resizing.
-            LOG(LOG_LEVEL_DEBUG, "Invalidate received and processing frame ID 1. Unblocking encoder. Invalidate is %d.", xrdp_invalidate);
+            LOG(LOG_LEVEL_DEBUG, "Invalidate received and processing "
+                                 "frame ID 1. Unblocking encoder. "
+                                 "Invalidate is %d.", xrdp_invalidate);
             xi->resizing = 0;
         }
         else
         {
-            LOG(LOG_LEVEL_DEBUG, "Blocked Incoming Frame ID %d. Invalidate is %d", frame_id, xrdp_invalidate);
+            LOG(LOG_LEVEL_DEBUG, "Blocked Incoming Frame ID %d. "
+                                 "Invalidate is %d", frame_id, xrdp_invalidate);
             return 0;
         }
     }

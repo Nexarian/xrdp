@@ -306,7 +306,7 @@ xorgxrdp_helper_x11_init(void)
     fsource[XH_SHADERCOPY] = g_fs_copy;
     /* create rgb2yuv shader */
     vsource[XH_SHADERRGB2YUV420] = g_vs;
-    fsource[XH_SHADERRGB2YUV420] = g_fs_rgb_to_yuv420;
+    fsource[XH_SHADERRGB2YUV420] = g_fs_rgb_to_yuv420_mv; //g_fs_rgb_to_yuv420;
     /* create rgb2yuv shader */
     vsource[XH_SHADERRGB2YUV422] = g_vs;
     fsource[XH_SHADERRGB2YUV422] = g_fs_rgb_to_yuv422;
@@ -772,7 +772,7 @@ xorgxrdp_helper_x11_encode_pixmap(int left, int top, int width, int height,
     {
         int index = mi->tex_format[i] % XH_NUM_SHADERS;
         si = g_si + index;
-        LOG(LOG_LEVEL_TRACE, "Running shader ID: %d", index);
+        LOG(LOG_LEVEL_INFO, "Running shader ID: %d", index);
         glUseProgram(si->program);
         /* uniforms */
         glUniform2f(si->tex_size_loc, mi->width, mi->height);

@@ -524,7 +524,7 @@ process_enc_rfx(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
 }
 #endif
 
-#define SAVE_VIDEO 1
+#define SAVE_VIDEO 0
 
 #if SAVE_VIDEO
 #include <sys/types.h>
@@ -726,8 +726,8 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
             g_free(out_data);
             return 0;
         }
-        LOG(LOG_LEVEL_DEBUG,
-            "process_enc_h264: already compressed and size is %d", cbytes);
+        LOG(LOG_LEVEL_INFO,
+            "process_enc_h264: Main frame already compressed and size is %d", cbytes);
         out_data_bytes = cbytes;
         g_memcpy(s->p, enc->data + 4, out_data_bytes);
     }
@@ -780,8 +780,8 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
             g_free(out_data);
             return 0;
         }
-        LOG(LOG_LEVEL_DEBUG,
-            "process_enc_h264: already compressed and size is %d", cbytes);
+        LOG(LOG_LEVEL_INFO,
+            "process_enc_h264: Aux frame already compressed and size is %d", cbytes);
         out_data_bytes1 = cbytes;
         g_memcpy(s->p, enc->data + out_data_bytes + 8, out_data_bytes1);
     }
@@ -794,7 +794,6 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
                                          + (enc->height * enc->width)
                                          * 3 / 2,
                                          s->p, &out_data_bytes1);
-
     }
 #endif
     if (error != 0)
@@ -911,7 +910,7 @@ process_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
             //     break;
     }
 
-    enc_done->rect = calculateBoundingBox(enc->drects, enc->num_drects);
+    //enc_done->rect = calculateBoundingBox(enc->drects, enc->num_drects);
 
     /* done with msg */
     /* inform main thread done */

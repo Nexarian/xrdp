@@ -142,7 +142,7 @@ xorgxrdp_helper_nvenc_create_encoder(int width, int height, int tex,
     g_memset(&createEncodeParams, 0, sizeof(createEncodeParams));
     createEncodeParams.version = NV_ENC_INITIALIZE_PARAMS_VER;
     createEncodeParams.encodeGUID = NV_ENC_CODEC_H264_GUID;
-    createEncodeParams.presetGUID = NV_ENC_PRESET_P4_GUID;
+    createEncodeParams.presetGUID = NV_ENC_PRESET_P2_GUID;
     createEncodeParams.tuningInfo = NV_ENC_TUNING_INFO_LOW_LATENCY;
     createEncodeParams.encodeWidth = width;
     createEncodeParams.encodeHeight = height;
@@ -239,24 +239,22 @@ xorgxrdp_helper_nvenc_create_encoder(int width, int height, int tex,
     }
     encCfg.rcParams.cbQPIndexOffset = -1;
     encCfg.encodeCodecConfig.h264Config.chromaFormatIDC = 1;
-    //encCfg.encodeCodecConfig.h264Config.idrPeriod = 2;
     encCfg.encodeCodecConfig.h264Config.repeatSPSPPS = 1;
     encCfg.encodeCodecConfig.h264Config.disableSPSPPS = 0;
-    //encCfg.encodeCodecConfig.h264Config.maxNumRefFrames = 1;
     encCfg.encodeCodecConfig.h264Config.sliceMode = 0;
     encCfg.encodeCodecConfig.h264Config.sliceModeData = 0;
-    encCfg.encodeCodecConfig.h264Config.outputAUD = 0;
-    // encCfg.encodeCodecConfig.h264Config.outputBufferingPeriodSEI = 1;
-    // encCfg.encodeCodecConfig.h264Config.outputPictureTimingSEI = 1;
-    // encCfg.encodeCodecConfig.h264Config.level = NV_ENC_LEVEL_AUTOSELECT;
-    // encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoFullRangeFlag = 1;
-    // encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoSignalTypePresentFlag = 1;
-    // encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoFormat = NV_ENC_VUI_VIDEO_FORMAT_UNSPECIFIED;
-    // encCfg.encodeCodecConfig.h264Config.h264VUIParameters.bitstreamRestrictionFlag = 1;
-    // encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourDescriptionPresentFlag = 1;
-    // encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
-    // encCfg.encodeCodecConfig.h264Config.h264VUIParameters.transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_BT709;
-    // encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT709;
+    encCfg.encodeCodecConfig.h264Config.outputAUD = 1;
+    encCfg.encodeCodecConfig.h264Config.outputBufferingPeriodSEI = 1;
+    encCfg.encodeCodecConfig.h264Config.outputPictureTimingSEI = 1;
+    encCfg.encodeCodecConfig.h264Config.level = NV_ENC_LEVEL_AUTOSELECT;
+    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoFullRangeFlag = 1;
+    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoSignalTypePresentFlag = 1;
+    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoFormat = NV_ENC_VUI_VIDEO_FORMAT_UNSPECIFIED;
+    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.bitstreamRestrictionFlag = 1;
+    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourDescriptionPresentFlag = 1;
+    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
+    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_BT709;
+    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT709;
 
     createEncodeParams.encodeConfig = &encCfg;
 
@@ -360,11 +358,13 @@ xorgxrdp_helper_nvenc_encode(struct enc_info *ei, int tex,
     picParams.inputWidth = ei->width;
     picParams.inputHeight = ei->height;
     picParams.outputBitstream = ei->bitstreamBuffer;
-    picParams.inputTimeStamp = g_time3();
+    picParams.inputTimeStamp = ei->frameCount;
     picParams.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
     if (xrdp_invalidate > 0 || ei->frameCount == 0)
     {
-        picParams.encodePicFlags = NV_ENC_PIC_FLAG_OUTPUT_SPSPPS | NV_ENC_PIC_FLAG_FORCEIDR | NV_ENC_PIC_FLAG_FORCEINTRA;
+        picParams.encodePicFlags |= NV_ENC_PIC_FLAG_FORCEIDR;
+        picParams.encodePicFlags |= NV_ENC_PIC_FLAG_OUTPUT_SPSPPS;
+        picParams.encodePicFlags |= NV_ENC_PIC_FLAG_FORCEINTRA;
         picParams.pictureType = NV_ENC_PIC_TYPE_IDR;
         LOG(LOG_LEVEL_INFO, "Forcing NVENC H264 IDR SPSPPS for frame id: %d,"
             "invalidate is: %d", ei->frameCount, xrdp_invalidate);
