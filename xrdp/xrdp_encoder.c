@@ -722,24 +722,25 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
         int cbytes = ud[0] | (ud[1] << 8) | (ud[2] << 16) | (ud[3] << 24);
         if ((cbytes < 1) || (cbytes > out_data_bytes))
         {
-            LOG(LOG_LEVEL_INFO, "process_enc_h264: bad h264 bytes %d", cbytes);
+            LOG(LOG_LEVEL_DEBUG, "process_enc_h264: bad h264 bytes %d", cbytes);
             g_free(out_data);
             return 0;
         }
-        LOG(LOG_LEVEL_INFO,
-            "process_enc_h264: Main frame already compressed and size is %d", cbytes);
+        LOG(LOG_LEVEL_DEBUG,
+            "process_enc_h264: Main frame already compressed and size is %d",
+            cbytes);
         out_data_bytes = cbytes;
         g_memcpy(s->p, enc->data + 4, out_data_bytes);
     }
+#if defined(XRDP_X264)
     else
     {
-#if defined(XRDP_X264)
         error = xrdp_encoder_x264_encode(self->codec_handle, 0,
                                          enc->width, enc->height, 0,
                                          enc->data,
                                          s->p, &out_data_bytes);
-#endif
     }
+#endif
     LOG_DEVEL(LOG_LEVEL_TRACE,
               "process_enc_h264: xrdp_encoder_x264_encode rv %d "
               "out_data_bytes %d width %d height %d",
@@ -771,8 +772,7 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     if (enc->flags & 1)
     {
         /* already compressed */
-        //uint8_t *ud = (uint8_t *) (enc->data);
-        uint8_t *ud = (uint8_t *) (enc->data + enc_done->out_data_bytes + 4);
+        uint8_t *ud = (uint8_t *) (enc->data + out_data_bytes + 4);
         int cbytes = ud[0] | (ud[1] << 8) | (ud[2] << 16) | (ud[3] << 24);
         if ((cbytes < 1) || (cbytes > out_data_bytes1))
         {
@@ -910,7 +910,7 @@ process_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
             //     break;
     }
 
-    //enc_done->rect = calculateBoundingBox(enc->drects, enc->num_drects);
+    enc_done->rect = calculateBoundingBox(enc->drects, enc->num_drects);
 
     /* done with msg */
     /* inform main thread done */

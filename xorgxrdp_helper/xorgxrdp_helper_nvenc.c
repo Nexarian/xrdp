@@ -79,7 +79,8 @@ xorgxrdp_helper_nvenc_init(void)
         g_lib = g_load_library(g_lib_name1);
         if (g_lib == 0)
         {
-            LOG(LOG_LEVEL_ERROR, "load library for %s/%s failed", g_lib_name, g_lib_name1);
+            LOG(LOG_LEVEL_ERROR, "load library for %s/%s failed",
+                g_lib_name, g_lib_name1);
             return 1;
         }
     }
@@ -133,7 +134,8 @@ xorgxrdp_helper_nvenc_create_encoder(int width, int height, int tex,
     params.deviceType = NV_ENC_DEVICE_TYPE_OPENGL;
     params.apiVersion = NVENCAPI_VERSION;
     nv_error = g_enc_funcs.nvEncOpenEncodeSessionEx(&params, &(lei->enc));
-    LOG(LOG_LEVEL_INFO, "nvEncOpenEncodeSessionEx rv %d enc %p", nv_error, lei->enc);
+    LOG(LOG_LEVEL_INFO, "nvEncOpenEncodeSessionEx rv %d enc %p",
+        nv_error, lei->enc);
     if (nv_error != NV_ENC_SUCCESS)
     {
         return 1;
@@ -142,7 +144,7 @@ xorgxrdp_helper_nvenc_create_encoder(int width, int height, int tex,
     g_memset(&createEncodeParams, 0, sizeof(createEncodeParams));
     createEncodeParams.version = NV_ENC_INITIALIZE_PARAMS_VER;
     createEncodeParams.encodeGUID = NV_ENC_CODEC_H264_GUID;
-    createEncodeParams.presetGUID = NV_ENC_PRESET_P2_GUID;
+    createEncodeParams.presetGUID = NV_ENC_PRESET_P7_GUID;
     createEncodeParams.tuningInfo = NV_ENC_TUNING_INFO_LOW_LATENCY;
     createEncodeParams.encodeWidth = width;
     createEncodeParams.encodeHeight = height;
@@ -172,7 +174,6 @@ xorgxrdp_helper_nvenc_create_encoder(int width, int height, int tex,
     memcpy(&encCfg, &preset_config.presetCfg, sizeof(NV_ENC_CONFIG));
     encCfg.profileGUID = NV_ENC_H264_PROFILE_MAIN_GUID;
     encCfg.gopLength = NVENC_INFINITE_GOPLENGTH;
-    //encCfg.gopLength = 10;
     encCfg.frameIntervalP = 1;  /* 1 + B_Frame_Count */
     encCfg.frameFieldMode = NV_ENC_PARAMS_FRAME_FIELD_MODE_FRAME;
     encCfg.mvPrecision = NV_ENC_MV_PRECISION_QUARTER_PEL;
@@ -241,20 +242,31 @@ xorgxrdp_helper_nvenc_create_encoder(int width, int height, int tex,
     encCfg.encodeCodecConfig.h264Config.chromaFormatIDC = 1;
     encCfg.encodeCodecConfig.h264Config.repeatSPSPPS = 1;
     encCfg.encodeCodecConfig.h264Config.disableSPSPPS = 0;
+
+    /*
+        TODO: Fix this!
+        This is somehow necessary to work with Mac OS...
+    */
+    encCfg.encodeCodecConfig.h264Config.maxNumRefFrames = 1;
+
     encCfg.encodeCodecConfig.h264Config.sliceMode = 0;
     encCfg.encodeCodecConfig.h264Config.sliceModeData = 0;
     encCfg.encodeCodecConfig.h264Config.outputAUD = 1;
     encCfg.encodeCodecConfig.h264Config.outputBufferingPeriodSEI = 1;
     encCfg.encodeCodecConfig.h264Config.outputPictureTimingSEI = 1;
     encCfg.encodeCodecConfig.h264Config.level = NV_ENC_LEVEL_AUTOSELECT;
-    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoFullRangeFlag = 1;
-    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoSignalTypePresentFlag = 1;
-    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.videoFormat = NV_ENC_VUI_VIDEO_FORMAT_UNSPECIFIED;
-    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.bitstreamRestrictionFlag = 1;
-    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourDescriptionPresentFlag = 1;
-    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
-    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.transferCharacteristics = NV_ENC_VUI_TRANSFER_CHARACTERISTIC_BT709;
-    encCfg.encodeCodecConfig.h264Config.h264VUIParameters.colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT709;
+
+    NV_ENC_CONFIG_H264_VUI_PARAMETERS *h264VUIParameters =
+        &encCfg.encodeCodecConfig.h264Config.h264VUIParameters;
+    h264VUIParameters->videoFullRangeFlag = 1;
+    h264VUIParameters->videoSignalTypePresentFlag = 1;
+    h264VUIParameters->videoFormat = NV_ENC_VUI_VIDEO_FORMAT_UNSPECIFIED;
+    h264VUIParameters->bitstreamRestrictionFlag = 1;
+    h264VUIParameters->colourDescriptionPresentFlag = 1;
+    h264VUIParameters->colourPrimaries = NV_ENC_VUI_COLOR_PRIMARIES_BT709;
+    h264VUIParameters->transferCharacteristics =
+        NV_ENC_VUI_TRANSFER_CHARACTERISTIC_BT709;
+    h264VUIParameters->colourMatrix = NV_ENC_VUI_MATRIX_COEFFS_BT709;
 
     createEncodeParams.encodeConfig = &encCfg;
 

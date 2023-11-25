@@ -306,7 +306,7 @@ xorgxrdp_helper_x11_init(void)
     fsource[XH_SHADERCOPY] = g_fs_copy;
     /* create rgb2yuv shader */
     vsource[XH_SHADERRGB2YUV420] = g_vs;
-    fsource[XH_SHADERRGB2YUV420] = g_fs_rgb_to_yuv420_mv; //g_fs_rgb_to_yuv420;
+    fsource[XH_SHADERRGB2YUV420] = g_fs_rgb_to_yuv420;
     /* create rgb2yuv shader */
     vsource[XH_SHADERRGB2YUV422] = g_vs;
     fsource[XH_SHADERRGB2YUV422] = g_fs_rgb_to_yuv422;
@@ -783,12 +783,14 @@ xorgxrdp_helper_x11_encode_pixmap(int left, int top, int width, int height,
         /* encode */
         int quad_index = 4 * (i + 1);
         enc_write_location = cdata + running_size + quad_index;
+        int encoded_size = cdata_bytes[i];
         rv = g_enc_funcs[g_enc].encode(mi->ei, mi->enc_texture,
-                                       enc_write_location, &(cdata_bytes[i]));
+                                       enc_write_location, &encoded_size);
         if (rv == ENCODER_ERROR)
         {
             return ENCODER_ERROR;
         }
+        cdata_bytes[i] = encoded_size;
         running_size += cdata_bytes[i];
     }
 
