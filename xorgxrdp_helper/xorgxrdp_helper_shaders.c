@@ -168,9 +168,10 @@ MAIN VIEW - NV12
     TODO: This appears to be identical to g_fs_rgb_to_yuv420.
     Keeping this now because this is a dev prototype, but we might
     want to remove this in the future.
-*/
 
-/*
+
+    TODO: These don't work. Fix it!
+*/
 static const GLchar g_fs_rgb_to_yuv420_mv[] = "\
 #version 460 core\n\
 uniform sampler2D tex;\n\
@@ -220,8 +221,8 @@ void main(void)\n\
         }\n\
     }\n\
 }\n";
-*/
 
+/*
 static const GLchar g_fs_rgb_to_yuv420_mv[] = "\
 #version 460 core\n\
 uniform sampler2D tex;\n\
@@ -263,6 +264,7 @@ void main()\n\
     }\n\
     FragColor = vec4(pix.r, 0.0, 0.0, 1.0);\n\
 }\n";
+*/
 
 /*
 AUXILIARY VIEW - NV12

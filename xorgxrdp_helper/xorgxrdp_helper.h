@@ -22,7 +22,10 @@
 #define XH_YUV420        1
 #define XH_YUV422        2
 #define XH_YUV444        3
-#define XH_YUV444_V2_MV  4
+
+// This should 4, but 4 doesn't work. Fix it!
+#define XH_YUV444_V2_MV  1
+
 #define XH_YUV444_V2_AUX 6
 
 #define XH_BT601    0
