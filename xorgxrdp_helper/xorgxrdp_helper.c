@@ -181,8 +181,8 @@ xorg_process_message_64(struct xorgxrdp_info *xi, struct trans *trans,
                         char *bmpdata_location = i == 0
                                                  ? bmpdata
                                                  : bmpdata
-                                                    + cdata_bytes[i - 1]
-                                                    + (4 * i);
+                                                 + cdata_bytes[i - 1]
+                                                 + (4 * i);
                         bmpdata_location[0] = cdata_value;
                         bmpdata_location[1] = cdata_value >> 8;
                         bmpdata_location[2] = cdata_value >> 16;
