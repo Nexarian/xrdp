@@ -110,14 +110,14 @@ xorg_process_message_64(struct xorgxrdp_info *xi, struct trans *trans,
         {
             // Let it through. We are no longer resizing.
             LOG(LOG_LEVEL_DEBUG, "Invalidate received and processing "
-                                 "frame ID 1. Unblocking encoder. "
-                                 "Invalidate is %d.", xrdp_invalidate);
+                "frame ID 1. Unblocking encoder. "
+                "Invalidate is %d.", xrdp_invalidate);
             xi->resizing = 0;
         }
         else
         {
             LOG(LOG_LEVEL_DEBUG, "Blocked Incoming Frame ID %d. "
-                                 "Invalidate is %d", frame_id, xrdp_invalidate);
+                "Invalidate is %d", frame_id, xrdp_invalidate);
             return 0;
         }
     }
@@ -179,8 +179,8 @@ xorg_process_message_64(struct xorgxrdp_info *xi, struct trans *trans,
                     {
                         int cdata_value = cdata_bytes[i];
                         char *bmpdata_location = i == 0
-                            ? bmpdata
-                            : bmpdata + cdata_bytes[i - 1] + (4 * i);
+                                     ? bmpdata
+                                     : bmpdata + cdata_bytes[i - 1] + (4 * i);
                         bmpdata_location[0] = cdata_value;
                         bmpdata_location[1] = cdata_value >> 8;
                         bmpdata_location[2] = cdata_value >> 16;
