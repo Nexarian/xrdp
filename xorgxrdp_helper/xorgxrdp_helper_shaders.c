@@ -203,7 +203,7 @@ void main(void)\n\
             pix += texture(tex, vec2(x + 1.0, y) / tex_size);\n\
             pix += texture(tex, vec2(x, y + 1.0) / tex_size);\n\
             pix += texture(tex, vec2(x + 1.0, y + 1.0) / tex_size);\n\
-            pix *= 0.25;\n\
+            pix /= 4;\n\
             pix.a = 1.0;\n\
             pix = vec4(clamp(dot(umath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
             FragColor = pix;\n\
@@ -214,7 +214,7 @@ void main(void)\n\
             pix += texture(tex, vec2(x + 1.0, y) / tex_size);\n\
             pix += texture(tex, vec2(x, y + 1.0) / tex_size);\n\
             pix += texture(tex, vec2(x + 1.0, y + 1.0) / tex_size);\n\
-            pix *= 0.25;\n\
+            pix /= 4;\n\
             pix.a = 1.0;\n\
             pix = vec4(clamp(dot(vmath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
             FragColor = pix;\n\

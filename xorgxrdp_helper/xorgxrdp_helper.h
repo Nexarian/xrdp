@@ -23,7 +23,7 @@
 #define XH_YUV422        2
 #define XH_YUV444        3
 
-// This should 4, but 4 doesn't work. Fix it!
+// This should 4, but 4 doesn't work (graphical glitches). Fix it!
 #define XH_YUV444_V2_MV  1
 
 #define XH_YUV444_V2_AUX 6

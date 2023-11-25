@@ -145,7 +145,7 @@ xorgxrdp_helper_nvenc_create_encoder(int width, int height, int tex,
     createEncodeParams.version = NV_ENC_INITIALIZE_PARAMS_VER;
     createEncodeParams.encodeGUID = NV_ENC_CODEC_H264_GUID;
     createEncodeParams.presetGUID = NV_ENC_PRESET_P7_GUID;
-    createEncodeParams.tuningInfo = NV_ENC_TUNING_INFO_LOW_LATENCY;
+    createEncodeParams.tuningInfo = NV_ENC_TUNING_INFO_ULTRA_LOW_LATENCY;
     createEncodeParams.encodeWidth = width;
     createEncodeParams.encodeHeight = height;
     createEncodeParams.darWidth = width;
