@@ -784,7 +784,7 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
             g_free(out_data);
             return 0;
         }
-        LOG(LOG_LEVEL_INFO,
+        LOG(LOG_LEVEL_DEBUG,
             "process_enc_h264: Aux frame already compressed and size is %d", cbytes);
         out_data_bytes1 = cbytes;
         g_memcpy(s->p, enc->data + out_data_bytes + 8, out_data_bytes1);
