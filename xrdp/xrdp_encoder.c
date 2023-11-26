@@ -617,6 +617,26 @@ build_rfx_avc420_metablock(struct stream *s, short *rrects, int rcount,
     return comp_bytes_pre;
 }
 
+static int load_pre_encoded_frame(const char* data, struct stream *s,
+                                  int size_offset, int frame_data_offset,
+                                  int *frame_size_bytes)
+{
+    /* already compressed */
+    uint8_t *ud = (uint8_t *)(data + size_offset);
+    int cbytes = ud[0] | (ud[1] << 8) | (ud[2] << 16) | (ud[3] << 24);
+    if ((cbytes < 1) || (cbytes > *frame_size_bytes))
+    {
+        LOG(LOG_LEVEL_DEBUG, "process_enc_h264: bad h264 bytes %d", cbytes);
+        return 1;
+    }
+    LOG(LOG_LEVEL_DEBUG,
+        "process_enc_h264: Frame already compressed and size is %d",
+        cbytes);
+    *frame_size_bytes = cbytes;
+    g_memcpy(s->p, data + frame_data_offset, *frame_size_bytes);
+    return 0;
+}
+
 static XRDP_ENC_DATA_DONE *
 build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
 {
@@ -719,22 +739,13 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
         enc_done_flags = 0;
     }
     error = 0;
-    if (enc->flags & 1)
+    if (enc->flags & ENCODE_COMPLETE)
     {
-        /* already compressed */
-        uint8_t *ud = (uint8_t *) (enc->data);
-        int cbytes = ud[0] | (ud[1] << 8) | (ud[2] << 16) | (ud[3] << 24);
-        if ((cbytes < 1) || (cbytes > out_data_bytes))
+        if (load_pre_encoded_frame(enc->data, s, 0, 4, &out_data_bytes))
         {
-            LOG(LOG_LEVEL_DEBUG, "process_enc_h264: bad h264 bytes %d", cbytes);
             g_free(out_data);
             return 0;
         }
-        LOG(LOG_LEVEL_DEBUG,
-            "process_enc_h264: Main frame already compressed and size is %d",
-            cbytes);
-        out_data_bytes = cbytes;
-        g_memcpy(s->p, enc->data + 4, out_data_bytes);
     }
 #if defined(XRDP_X264)
     else
@@ -773,21 +784,15 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     comp_bytes_pre1 = build_rfx_avc420_metablock(s, rrects, rcount,
                       scr_width, scr_height);
     out_data_bytes1 = OUT_DATA_BYTES_DEFAULT_SIZE;
-    if (enc->flags & 1)
+    if (enc->flags & ENCODE_COMPLETE)
     {
-        /* already compressed */
-        uint8_t *ud = (uint8_t *) (enc->data + out_data_bytes + 4);
-        int cbytes = ud[0] | (ud[1] << 8) | (ud[2] << 16) | (ud[3] << 24);
-        if ((cbytes < 1) || (cbytes > out_data_bytes1))
+        if (load_pre_encoded_frame(enc->data, s,
+                                   out_data_bytes + 4, out_data_bytes + 8,
+                                   &out_data_bytes1))
         {
-            LOG(LOG_LEVEL_INFO, "process_enc_h264: bad h264 bytes %d", cbytes);
             g_free(out_data);
             return 0;
         }
-        LOG(LOG_LEVEL_DEBUG,
-            "process_enc_h264: Aux frame already compressed and size is %d", cbytes);
-        out_data_bytes1 = cbytes;
-        g_memcpy(s->p, enc->data + out_data_bytes + 8, out_data_bytes1);
     }
 #if defined(XRDP_X264)
     else
