@@ -208,6 +208,6 @@ EnableSyslog=true
 PULSE_SCRIPT=@sesmansysconfdir@/pulse/default.pa
 XRDP_USE_HELPER=1
 XRDP_NVENC_RATE_CONTROL_MODE=NV_ENC_PARAMS_RC_CONSTQP
-XRDP_NVENC_QP=22
+XRDP_NVENC_QP=19
 @ldlibrarypath@
 @libvadriverspath@

@@ -164,65 +164,6 @@ MAIN VIEW - NV12
     ...
     0E 0E 2E 2E 4E 4E 6E 6E 8E 8E AE AE CE CE EE EE
 */
-/*
-    TODO: This appears to be identical to g_fs_rgb_to_yuv420.
-    Keeping this now because this is a dev prototype, but we might
-    want to remove this in the future.
-
-
-    TODO: These don't work. Fix it!
-*/
-static const GLchar g_fs_rgb_to_yuv420_mv[] = "\
-#version 460 core\n\
-uniform sampler2D tex;\n\
-uniform vec2 tex_size;\n\
-uniform vec4 ymath;\n\
-uniform vec4 umath;\n\
-uniform vec4 vmath;\n\
-out vec4 FragColor;\n\
-void main(void)\n\
-{\n\
-    vec4 pix;\n\
-    float x;\n\
-    float y;\n\
-    x = gl_FragCoord.x;\n\
-    y = gl_FragCoord.y;\n\
-    if (y < tex_size.y)\n\
-    {\n\
-        pix = texture(tex, vec2(x, y) / tex_size);\n\
-        pix.a = 1.0;\n\
-        pix = vec4(clamp(dot(ymath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
-        FragColor = pix;\n\
-    }\n\
-    else\n\
-    {\n\
-        y = floor(y - tex_size.y) * 2.0 + 0.5;\n\
-        if (mod(x, 2.0) < 1.0)\n\
-        {\n\
-            pix = texture(tex, vec2(x, y) / tex_size);\n\
-            pix += texture(tex, vec2(x + 1.0, y) / tex_size);\n\
-            pix += texture(tex, vec2(x, y + 1.0) / tex_size);\n\
-            pix += texture(tex, vec2(x + 1.0, y + 1.0) / tex_size);\n\
-            pix /= 4;\n\
-            pix.a = 1.0;\n\
-            pix = vec4(clamp(dot(umath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
-            FragColor = pix;\n\
-        }\n\
-        else\n\
-        {\n\
-            pix = texture(tex, vec2(x, y) / tex_size);\n\
-            pix += texture(tex, vec2(x + 1.0, y) / tex_size);\n\
-            pix += texture(tex, vec2(x, y + 1.0) / tex_size);\n\
-            pix += texture(tex, vec2(x + 1.0, y + 1.0) / tex_size);\n\
-            pix /= 4;\n\
-            pix.a = 1.0;\n\
-            pix = vec4(clamp(dot(vmath, pix), 0.0, 1.0), 0.0, 0.0, 1.0);\n\
-            FragColor = pix;\n\
-        }\n\
-    }\n\
-}\n";
-
-/*
 static const GLchar g_fs_rgb_to_yuv420_mv[] = "\
 #version 460 core\n\
 uniform sampler2D tex;\n\
@@ -247,10 +188,10 @@ void main()\n\
         y = floor(y - tex_size.y) * 2.0 + 0.5;\n\
         float xOffset = mod(x, 2.0);\n\
         float antiAliasMod = xOffset == 0 ? 1.0 : -1.0;\n\
-        pix = texture(tex, vec2(x - xOffset, y) / tex_size);\n\
-        pix += texture(tex, vec2(x - xOffset + antiAliasMod, y) / tex_size);\n\
-        pix += texture(tex, vec2(x - xOffset, y + 1.0) / tex_size);\n\
-        pix += texture(tex, vec2(x - xOffset + antiAliasMod, y + 1.0) / tex_size);\n\
+        pix = texture(tex, vec2(x, y) / tex_size);\n\
+        pix += texture(tex, vec2(x + antiAliasMod, y) / tex_size);\n\
+        pix += texture(tex, vec2(x, y + 1.0) / tex_size);\n\
+        pix += texture(tex, vec2(x + antiAliasMod, y + 1.0) / tex_size);\n\
         pix /= 4.0;\n\
         pix.a = 1.0;\n\
         if (xOffset < 1.0)\n\
@@ -264,7 +205,6 @@ void main()\n\
     }\n\
     FragColor = vec4(pix.r, 0.0, 0.0, 1.0);\n\
 }\n";
-*/
 
 /*
 AUXILIARY VIEW - NV12
