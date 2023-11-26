@@ -577,7 +577,11 @@ build_rfx_avc420_metablock(struct stream *s, short *rrects, int rcount,
     int x, y, cx, cy;
     int location;
     struct enc_rect rect;
-    const uint8_t qp = 19; // Default set by Microsoft.
+    /*
+        Microsoft default QP is 22, but emperical 
+        testing shows 19 is slightly better.
+    */
+    const uint8_t qp = 19;
     const uint8_t r = 0; // Required to be 0.
     const uint8_t p = 0; // Progressively encoded flag.
     int qpVal = 0;
