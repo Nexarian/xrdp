@@ -578,7 +578,7 @@ build_rfx_avc420_metablock(struct stream *s, short *rrects, int rcount,
     int location;
     struct enc_rect rect;
     /*
-        Microsoft default QP is 22, but emperical 
+        Microsoft default QP is 22, but empirical
         testing shows 19 is slightly better.
     */
     const uint8_t qp = 19;
@@ -617,7 +617,7 @@ build_rfx_avc420_metablock(struct stream *s, short *rrects, int rcount,
     return comp_bytes_pre;
 }
 
-static int load_pre_encoded_frame(const char* data, struct stream *s,
+static int load_pre_encoded_frame(const char *data, struct stream *s,
                                   int size_offset, int frame_data_offset,
                                   int *frame_size_bytes)
 {
