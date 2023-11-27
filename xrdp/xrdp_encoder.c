@@ -566,31 +566,14 @@ static int n_save_data(const char *data, int data_size, int width, int height)
 }
 #endif
 
-#if defined(XRDP_X264)
-
-/*****************************************************************************/
-static int
-build_rfx_avc420_metablock(struct stream *s, short *rrects, int rcount,
-                           int width, int height)
+static void
+build_stream_rectangles(struct stream *s, short *rrects,
+                        int rcount, int width, int height)
 {
-    int index;
+    int index, location;
     int x, y, cx, cy;
-    int location;
     struct enc_rect rect;
-    /*
-        Microsoft default QP is 22, but empirical
-        testing shows 19 is slightly better.
-    */
-    const uint8_t qp = 19;
-    const uint8_t r = 0; // Required to be 0.
-    const uint8_t p = 0; // Progressively encoded flag.
-    int qpVal = 0;
-    qpVal |= qp & 0x3F;
-    qpVal |= (r & 1) << 6;
-    qpVal |= (p & 1) << 7;
-
-    out_uint32_le(s, rcount); /* numRegionRects */
-    for (index = 0; index < rcount; index++)
+    for (index = 0; index < rcount; ++index)
     {
         location = index * 4;
         x = rrects[location + 0];
@@ -607,7 +590,29 @@ build_rfx_avc420_metablock(struct stream *s, short *rrects, int rcount,
         out_uint16_le(s, rect.x2);
         out_uint16_le(s, rect.y2);
     }
-    for (index = 0; index < rcount; index++)
+}
+
+#if defined(XRDP_X264)
+
+/*****************************************************************************/
+static int
+build_rfx_avc420_metablock(struct stream *s, short *rrects, int rcount,
+                           int width, int height)
+{
+    /*
+        Microsoft default QP is 22, but empirical
+        testing shows 19 is slightly better.
+    */
+    const uint8_t qp = 19;
+    const uint8_t r = 0; // Required to be 0.
+    const uint8_t p = 0; // Progressively encoded flag.
+    int qpVal = 0;
+    qpVal |= qp & 0x3F;
+    qpVal |= (r & 1) << 6;
+    qpVal |= (p & 1) << 7;
+    out_uint32_le(s, rcount); /* numRegionRects */
+    build_stream_rectangles(s, rrects, rcount, width, height);
+    for (int index = 0; index < rcount; ++index)
     {
         // 2.2.4.4.2 RDPGFX_AVC420_QUANT_QUALITY
         out_uint8(s, qpVal); /* qp */
@@ -717,6 +722,9 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     }
     else
     {
+        // Header for fastpath???
+        // Appears to be for sending H264 over standard bitmap
+        // commands... Looking for references.
         out_uint32_le(s, 0); /* flags */
         out_uint32_le(s, 0); /* session id */
         out_uint16_le(s, enc->width); /* src_width */
@@ -724,17 +732,7 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
         out_uint16_le(s, enc->width); /* dst_width */
         out_uint16_le(s, enc->height); /* dst_height */
         out_uint16_le(s, rcount);
-        for (index = 0; index < rcount; index++)
-        {
-            x = rrects[index * 4 + 0];
-            y = rrects[index * 4 + 1];
-            cx = rrects[index * 4 + 2];
-            cy = rrects[index * 4 + 3];
-            out_uint16_le(s, x);
-            out_uint16_le(s, y);
-            out_uint16_le(s, cx);
-            out_uint16_le(s, cy);
-        }
+        build_stream_rectangles(s, rrects, rcount, width, height);
         s_push_layer(s, iso_hdr, 4);
         comp_bytes_pre = 4 + 4 + 2 + 2 + 2 + 2 + 2 + rcount * 8 + 4;
         enc_done_flags = 0;

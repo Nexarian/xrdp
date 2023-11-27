@@ -3336,7 +3336,7 @@ xrdp_mm_process_enc_done(struct xrdp_mm *self)
                       "x %d y %d cx %d cy %d frame_id %d use_frame_acks %d",
                       x, y, cx, cy, enc_done->enc->frame_id,
                       self->wm->client_info->use_frame_acks);
-            if (enc_done->flags & 1) /* gfx h264 */
+            if (enc_done->flags & ENCODE_COMPLETE) /* gfx h264 */
             {
                 rect.x1 = x;
                 rect.y1 = y;
@@ -3386,7 +3386,7 @@ xrdp_mm_process_enc_done(struct xrdp_mm *self)
                 xrdp_egfx_send_frame_end(self->egfx, enc_done->enc->frame_id);
 #endif
             }
-            else if (enc_done->flags & 2) /* gfx progressive rfx */
+            else if (enc_done->flags & GFX_PROGRESSIVE_RFX) /* gfx progressive rfx */
             {
                 xrdp_egfx_send_frame_start(self->egfx,
                                            enc_done->enc->frame_id, 0);
