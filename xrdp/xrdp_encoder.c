@@ -566,6 +566,8 @@ static int n_save_data(const char *data, int data_size, int width, int height)
 }
 #endif
 
+#if defined(XRDP_X264)
+
 static void
 build_stream_rectangles(struct stream *s, short *rrects,
                         int rcount, int width, int height)
@@ -591,8 +593,6 @@ build_stream_rectangles(struct stream *s, short *rrects,
         out_uint16_le(s, rect.y2);
     }
 }
-
-#if defined(XRDP_X264)
 
 /*****************************************************************************/
 static int
