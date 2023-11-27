@@ -652,10 +652,6 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     }
 
     int index;
-    int x;
-    int y;
-    int cx;
-    int cy;
     int rcount;
     short *rrects;
     int error;
@@ -732,7 +728,7 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
         out_uint16_le(s, enc->width); /* dst_width */
         out_uint16_le(s, enc->height); /* dst_height */
         out_uint16_le(s, rcount);
-        build_stream_rectangles(s, rrects, rcount, width, height);
+        build_stream_rectangles(s, rrects, rcount, enc->width,  enc->height);
         s_push_layer(s, iso_hdr, 4);
         comp_bytes_pre = 4 + 4 + 2 + 2 + 2 + 2 + 2 + rcount * 8 + 4;
         enc_done_flags = 0;
