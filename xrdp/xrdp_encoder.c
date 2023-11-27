@@ -617,12 +617,13 @@ build_rfx_avc420_metablock(struct stream *s, short *rrects, int rcount,
     return comp_bytes_pre;
 }
 
-static int load_pre_encoded_frame(const char *data, struct stream *s,
-                                  int size_offset, int frame_data_offset,
+static int load_pre_encoded_frame(const char *source_data,
+                                  char *dest_data, int size_offset,
+                                  int frame_data_offset,
                                   int *frame_size_bytes)
 {
     /* already compressed */
-    uint8_t *ud = (uint8_t *)(data + size_offset);
+    uint8_t *ud = (uint8_t *)(source_data + size_offset);
     int cbytes = ud[0] | (ud[1] << 8) | (ud[2] << 16) | (ud[3] << 24);
     if ((cbytes < 1) || (cbytes > *frame_size_bytes))
     {
@@ -633,7 +634,7 @@ static int load_pre_encoded_frame(const char *data, struct stream *s,
         "process_enc_h264: Frame already compressed and size is %d",
         cbytes);
     *frame_size_bytes = cbytes;
-    g_memcpy(s->p, data + frame_data_offset, *frame_size_bytes);
+    g_memcpy(dest_data, source_data + frame_data_offset, *frame_size_bytes);
     return 0;
 }
 
@@ -741,7 +742,7 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     error = 0;
     if (enc->flags & ENCODE_COMPLETE)
     {
-        if (load_pre_encoded_frame(enc->data, s, 0, 4, &out_data_bytes))
+        if (load_pre_encoded_frame(enc->data, s->p, 0, 4, &out_data_bytes))
         {
             g_free(out_data);
             return 0;
@@ -773,12 +774,6 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     n_save_data(s->p, out_data_bytes, enc->width, enc->height);
 #endif
     s->p += out_data_bytes;
-
-    uint8_t LC = 0b00;
-    uint32_t bitstream =
-        ((uint32_t)(comp_bytes_pre + out_data_bytes) & 0x3FFFFFFFUL)
-        | ((LC & 0x03UL) << 30UL);
-
     /* chroma 444 */
     /* RFX_AVC420_METABLOCK */
     comp_bytes_pre1 = build_rfx_avc420_metablock(s, rrects, rcount,
@@ -786,7 +781,7 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     out_data_bytes1 = OUT_DATA_BYTES_DEFAULT_SIZE;
     if (enc->flags & ENCODE_COMPLETE)
     {
-        if (load_pre_encoded_frame(enc->data, s,
+        if (load_pre_encoded_frame(enc->data, s->p,
                                    out_data_bytes + 4, out_data_bytes + 8,
                                    &out_data_bytes1))
         {
@@ -819,7 +814,13 @@ build_enc_h264(struct xrdp_encoder *self, XRDP_ENC_DATA *enc)
     s->p += out_data_bytes1;
     s_push_layer(s, sec_hdr, 0);
     s_pop_layer(s, mcs_hdr);
+
+    uint8_t LC = 0b00;
+    uint32_t bitstream =
+        ((uint32_t)(comp_bytes_pre + out_data_bytes) & 0x3FFFFFFFUL)
+        | ((LC & 0x03UL) << 30UL);
     out_uint32_le(s, bitstream);
+
     s_pop_layer(s, sec_hdr);
 
     s->end = s->p;
