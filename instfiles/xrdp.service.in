@@ -11,7 +11,7 @@ EnvironmentFile=-@sysconfdir@/default/xrdp
 ExecStart=@sbindir@/xrdp $XRDP_OPTIONS --nodaemon
 SystemCallArchitectures=native
 SystemCallFilter=@basic-io @file-system @io-event @ipc @network-io @process
-SystemCallFilter=@signal ioctl madvise sysinfo uname @system-service brk
+SystemCallFilter=@signal @system-service brk ioctl madvise sysinfo uname
 SystemCallErrorNumber=EPERM
 
 [Install]
